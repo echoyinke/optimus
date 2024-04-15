@@ -68,7 +68,8 @@ meta_file 内容(content)：
 > 抖音前端实现，诸多css class id 均为随机数，故项目中locator多采用相对定位，而非固定定位
 1. 准备视频目录结构
 2. cookie获取：get_douyin_cookie.py 扫码登录
-3. 上传视频：upload_video_to_douyin.py 
+3. 上传视频：upload_video_to_douyin.py
+4. 上传单个视频： `python upload_video_to_douyin.py <video_folder_path>`
 
 
 
