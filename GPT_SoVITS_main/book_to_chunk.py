@@ -50,6 +50,7 @@ def split_book_into_chunk(file_path, chunk_size=500, output_dir='../chunks_outpu
     book_dir = os.path.join(output_dir, file_name)
     os.makedirs(book_dir, exist_ok=True)
 
+    chunk_json_path_list = []
     # save chunks
     for i, chapter in enumerate(content):
         chapter_dir = os.path.join(book_dir, f"chapter_{i}")
@@ -65,9 +66,10 @@ def split_book_into_chunk(file_path, chunk_size=500, output_dir='../chunks_outpu
                 "chunk_size" : len(text),
                 "chunk_text" : text
             }
-            json.dump(chunk_json, open(os.path.join(chapter_dir, f"chunk_{j}.json"), 'w'), ensure_ascii=False, indent=4)
-
-    return content
+            chunk_json_path = os.path.join(chapter_dir, f"chunk_{j}.json")
+            json.dump(chunk_json, open(chunk_json_path, 'w'), ensure_ascii=False, indent=4)
+            chunk_json_path_list.append(chunk_json_path)
+    return chunk_json_path_list
     
 if __name__ == '__main__':
     file_path = '../novel_material/天下第一掌柜.txt'
