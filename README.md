@@ -1,1 +1,5 @@
 # optimus
+
+
+# Setup
+* install ffmpeg
