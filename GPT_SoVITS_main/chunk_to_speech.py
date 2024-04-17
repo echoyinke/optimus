@@ -5,16 +5,16 @@ import time
 import json
 import shutil
 
-def tts(text, output_wav_file_path, ref_wav_path):
+def tts(text, output_wav_file_path, ref_wav_path, max_iter=600):
     # prompt_text = '今天的天气真不错啊，我想出去玩儿'
     prompt_text = ''
     prompt_language = '中英混合'
     # text = '使用无参考文本模式时建议使用微调的GPT，听不清参考音频说的啥(不晓得写啥)可以开，开启后无视填写的参考文本。'
     text_language = '中英混合'
-    sampling_rate, audio_np = generate_tts_wav(ref_wav_path, prompt_text, prompt_language, text, text_language)
+    sampling_rate, audio_np = generate_tts_wav(ref_wav_path, prompt_text, prompt_language, text, text_language, max_iter=max_iter)
     write(output_wav_file_path, sampling_rate, audio_np)
 
-def text_to_speech(text, ref_wav_path, save_dir, max_time_per_word_limit=1, max_retry=2):
+def text_to_speech(text, ref_wav_path, save_dir, max_time_per_word_limit=1, max_retry=2, max_iter=600):
     os.makedirs(save_dir, exist_ok=True)
     time_per_word = max_time_per_word_limit + 1
     retry = 0
@@ -24,7 +24,7 @@ def text_to_speech(text, ref_wav_path, save_dir, max_time_per_word_limit=1, max_
             time.sleep(20)
         start_time = time.time()
         # text to speech
-        tts(text, os.path.join(save_dir, f"speech.wav"), ref_wav_path = ref_wav_path)
+        tts(text, os.path.join(save_dir, f"speech.wav"), ref_wav_path = ref_wav_path, max_iter=max_iter)
         end_time = time.time()
         # record the time for each word
         time_per_word = (end_time - start_time) / len(text)
@@ -47,10 +47,10 @@ def text_to_speech(text, ref_wav_path, save_dir, max_time_per_word_limit=1, max_
             break
         retry += 1
 
-def chunk_to_speech(chunk_json_path, ref_wav_path, save_dir, max_time_per_word_limit=1, max_retry=2):
+def chunk_to_speech(chunk_json_path, ref_wav_path, save_dir, max_time_per_word_limit=1, max_retry=2, max_iter=600):
     chunk_json = json.load(open(chunk_json_path, 'r'))
     text = chunk_json["chunk_text"]
-    text_to_speech(text, ref_wav_path, save_dir, max_time_per_word_limit, max_retry)
+    text_to_speech(text, ref_wav_path, save_dir, max_time_per_word_limit, max_retry, max_iter)
     # copy the json file to the output dir
     shutil.copy(chunk_json_path, save_dir)
 

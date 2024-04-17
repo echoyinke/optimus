@@ -432,7 +432,7 @@ def get_tts_wav(ref_wav_path, prompt_text, prompt_language, text, text_language,
         np.int16
     )
     
-def generate_tts_wav(ref_wav_path, prompt_text, prompt_language, text, text_language, how_to_cut=i18n("不切"), top_k=20, top_p=0.6, temperature=0.6, ref_free = False):
+def generate_tts_wav(ref_wav_path, prompt_text, prompt_language, text, text_language, how_to_cut=i18n("凑50字一切"), top_k=20, top_p=0.6, temperature=0.6, ref_free = False, max_iter=600):
     if prompt_text is None or len(prompt_text) == 0:
         ref_free = True
     t0 = ttime()
@@ -511,19 +511,21 @@ def generate_tts_wav(ref_wav_path, prompt_text, prompt_language, text, text_lang
         all_phoneme_len = torch.tensor([all_phoneme_ids.shape[-1]]).to(device)
         prompt = prompt_semantic.unsqueeze(0).to(device)
         t2 = ttime()
-        with torch.no_grad():
-            # pred_semantic = t2s_model.model.infer(
-            pred_semantic, idx = t2s_model.model.infer_panel(
-                all_phoneme_ids,
-                all_phoneme_len,
-                None if ref_free else prompt,
-                bert,
-                # prompt_phone_len=ph_offset,
-                top_k=top_k,
-                top_p=top_p,
-                temperature=temperature,
-                early_stop_num=hz * max_sec,
-            )
+        last_idx = 1500
+        while last_idx >= max_iter:
+            with torch.no_grad():
+                # pred_semantic = t2s_model.model.infer(
+                pred_semantic, idx, last_idx = t2s_model.model.infer_panel(
+                    all_phoneme_ids,
+                    all_phoneme_len,
+                    None if ref_free else prompt,
+                    bert,
+                    # prompt_phone_len=ph_offset,
+                    top_k=top_k,
+                    top_p=top_p,
+                    temperature=temperature,
+                    early_stop_num=hz * max_sec,
+                )
         t3 = ttime()
         # print(pred_semantic.shape,idx)
         pred_semantic = pred_semantic[:, -idx:].unsqueeze(

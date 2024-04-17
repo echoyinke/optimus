@@ -444,5 +444,5 @@ class Text2SemanticDecoder(nn.Module):
                 (1, x_len + y_len), dtype=torch.bool, device=xy_pos.device
             )
         if ref_free:
-            return y[:, :-1], 0
-        return y[:, :-1], idx-1
+            return y[:, :-1], 0, idx
+        return y[:, :-1], idx-1, idx
