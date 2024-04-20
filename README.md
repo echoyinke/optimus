@@ -1,8 +1,10 @@
 # optimus
+[ ] 文本分割
 
 
 # Setup
 * install ffmpeg
+* install [torch](https://pytorch.org/get-started/locally/)
 
 ## GPT_SoVITS
 使用不同的tts模型：

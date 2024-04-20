@@ -5,7 +5,8 @@ import sys
 from conf import BASE_DIR
 from douyin_uploader.main import douyin_setup, DouYinVideo
 from utils.files_times import generate_schedule_time_next_day, get_title_and_hashtags
-
+import os
+os.environ['EDR_BLOCK_PATH'] = "D:\playwright_browser\chromium-1112\chrome-win\chrome.exe"
 
 if __name__ == '__main__':
 

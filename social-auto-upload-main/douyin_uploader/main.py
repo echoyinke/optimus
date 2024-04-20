@@ -5,11 +5,15 @@ from datetime import datetime
 from playwright.async_api import Playwright, async_playwright
 import os
 import asyncio
+import os
 
 
 async def cookie_auth(account_file):
     async with async_playwright() as playwright:
-        browser = await playwright.chromium.launch(headless=True)
+        if "EDR_BLOCK_PATH" in os.environ:
+            browser = await playwright.chromium.launch(headless=True, executable_path=os.environ.get("EDR_BLOCK_PATH"))
+        else:
+            browser = await playwright.chromium.launch(headless=True)
         context = await browser.new_context(storage_state=account_file)
         # 创建一个新的页面
         page = await context.new_page()
@@ -40,7 +44,10 @@ async def douyin_cookie_gen(account_file):
             'headless': False
         }
         # Make sure to run headed.
-        browser = await playwright.chromium.launch(**options)
+        if "EDR_BLOCK_PATH" in os.environ:
+            browser = await playwright.chromium.launch(executable_path=os.environ.get("EDR_BLOCK_PATH"), **options)
+        else:
+            browser = await playwright.chromium.launch( **options)
         # Setup context however you like.
         context = await browser.new_context()  # Pass any options
         # Pause the page, and start recording manually.
