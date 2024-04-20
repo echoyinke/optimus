@@ -312,7 +312,7 @@ def runner(stage, file, sd_switch, output_dir, dest_text, dest_spk, start_ost, e
             logging.warning("Recognizing video file: {}".format(file))
             res_text, res_srt, state = audio_clipper.video_recog(file, sd_switch)
         total_srt_file = output_dir + '/total.srt'
-        with open(total_srt_file, 'w') as fout:
+        with open(total_srt_file, 'w', encoding='UTF-8') as fout:
             fout.write(res_srt)
             logging.warning("Write total subtitle to {}".format(total_srt_file))
         write_state(output_dir, state)
