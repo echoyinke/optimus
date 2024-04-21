@@ -92,6 +92,8 @@ class DouYinVideo(object):
         # 使用 Chromium 浏览器启动一个浏览器实例
         if self.local_executable_path:
             browser = await playwright.chromium.launch(headless=False, executable_path=self.local_executable_path)
+        elif "EDR_BLOCK_PATH" in os.environ:
+             browser = await playwright.chromium.launch(headless=False, executable_path=os.environ.get("EDR_BLOCK_PATH"))
         else:
             browser = await playwright.chromium.launch(headless=False)
         # 创建一个浏览器上下文，使用指定的 cookie 文件
