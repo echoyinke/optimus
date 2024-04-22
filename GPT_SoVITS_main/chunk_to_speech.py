@@ -4,6 +4,8 @@ import os
 import time
 import json
 import shutil
+import uuid
+import math
 
 def tts(text, output_wav_file_path, ref_wav_path, max_iter=600):
     # prompt_text = '今天的天气真不错啊，我想出去玩儿'
@@ -13,44 +15,33 @@ def tts(text, output_wav_file_path, ref_wav_path, max_iter=600):
     text_language = '中英混合'
     sampling_rate, audio_np = generate_tts_wav(ref_wav_path, prompt_text, prompt_language, text, text_language, max_iter=max_iter)
     write(output_wav_file_path, sampling_rate, audio_np)
+    audio_duration = audio_np.shape[0] / sampling_rate
+    return audio_duration
 
-def text_to_speech(text, ref_wav_path, save_dir, max_time_per_word_limit=1, max_retry=2, max_iter=600):
+def text_to_speech(text, ref_wav_path, save_dir, max_iter=600):
     os.makedirs(save_dir, exist_ok=True)
-    time_per_word = max_time_per_word_limit + 1
-    retry = 0
-    while time_per_word > max_time_per_word_limit: 
-        if retry > 0:
-            print(f"bad_generate, retry_{retry}...:")
-            time.sleep(20)
-        start_time = time.time()
-        # text to speech
-        tts(text, os.path.join(save_dir, f"speech.wav"), ref_wav_path = ref_wav_path, max_iter=max_iter)
-        end_time = time.time()
-        # record the time for each word
-        time_per_word = (end_time - start_time) / len(text)
-        speech_meta_json = {}
-        speech_meta_json["text"] = text
-        speech_meta_json["text_length"] = len(text)
-        speech_meta_json["time_per_text"] = end_time - start_time
-        speech_meta_json["time_per_word"] = time_per_word
-        if time_per_word <= 1: 
-            speech_meta_json["final_generate_status"] = "good"   
-        else:
-            speech_meta_json["final_generate_status"] = "bad"
-        speech_meta_json["retry"] = retry   
-        # print(speech_meta_json)
-        # save the json meta
-        with open(os.path.join(save_dir, f"speech_meta.json"), 'w') as f:
-            json.dump(speech_meta_json, f, ensure_ascii=False, indent=4)
+    start_time = time.time()
+    # text to speech
+    speech_duration = tts(text, os.path.join(save_dir, f"speech.wav"), ref_wav_path = ref_wav_path, max_iter=max_iter)
+    end_time = time.time()
+    # 获取wav的总时长
+    # record the time for each word
+    speech_meta_json = {
+        "speech_id" : str(uuid.uuid4()),
+        "speech_duration" : math.ceil(speech_duration),
+        "text" : text,
+        "text_length" : len(text),
+        "inference_time" : end_time - start_time,
+        "create_time" : time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+    }
+    # save the json meta
+    with open(os.path.join(save_dir, f"speech_meta.json"), 'w') as f:
+        json.dump(speech_meta_json, f, ensure_ascii=False, indent=4)
 
-        if retry >= max_retry:
-            break
-        retry += 1
-
-def chunk_to_speech(chunk_json_path, ref_wav_path, save_dir, max_time_per_word_limit=1, max_retry=2, max_iter=600):
+def chunk_to_speech(chunk_json_path, ref_wav_path, save_dir, max_iter=600):
     chunk_json = json.load(open(chunk_json_path, 'r'))
     text = chunk_json["chunk_text"]
-    text_to_speech(text, ref_wav_path, save_dir, max_time_per_word_limit, max_retry, max_iter)
+    text_to_speech(text, ref_wav_path, save_dir, max_iter)
     # copy the json file to the output dir
     shutil.copy(chunk_json_path, save_dir)
 

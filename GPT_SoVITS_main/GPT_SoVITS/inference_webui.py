@@ -525,6 +525,7 @@ def generate_tts_wav(ref_wav_path, prompt_text, prompt_language, text, text_lang
                     top_p=top_p,
                     temperature=temperature,
                     early_stop_num=hz * max_sec,
+                    max_iter=max_iter,
                 )
         t3 = ttime()
         # print(pred_semantic.shape,idx)

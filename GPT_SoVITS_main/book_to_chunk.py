@@ -1,6 +1,7 @@
 import os
 import json
 import uuid
+import time
 def clean_text_lines(file_lines):
     cleaned_lines = []
     filter_list = ['分界线', 
@@ -52,19 +53,21 @@ def split_book_into_chunk(file_path, chunk_size=500, output_dir='../chunks_outpu
 
     chunk_json_path_list = []
     # save chunks
+    book_id = str(uuid.uuid1())
     for i, chapter in enumerate(content):
         chapter_dir = os.path.join(book_dir, f"chapter_{i}")
         os.makedirs(chapter_dir, exist_ok=True)
         for j, text in enumerate(chapter["chunks"]):
             chunk_json = {
                 "book_name" : file_name,
-                # 对book_name赋予一个随机的uuid
-                "book_id" : str(uuid.uuid1()), 
+                "book_id" : book_id, 
                 "chapter_name" : chapter["chapter_name"],
                 "chapter_index" : i,
+                "chunk_id" : str(uuid.uuid1()),
                 "chunk_index" : j,
                 "chunk_size" : len(text),
-                "chunk_text" : text
+                "chunk_text" : text,
+                "create_time" : time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
             }
             chunk_json_path = os.path.join(chapter_dir, f"chunk_{j}.json")
             json.dump(chunk_json, open(chunk_json_path, 'w'), ensure_ascii=False, indent=4)

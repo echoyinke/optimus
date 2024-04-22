@@ -331,6 +331,7 @@ class Text2SemanticDecoder(nn.Module):
         top_p: int = 100,
         early_stop_num: int = -1,
         temperature: float = 1.0,
+        max_iter: int = 600,
     ):
         x = self.ar_text_embedding(x)
         x = x + self.bert_proj(bert_feature.transpose(1, 2))
@@ -388,7 +389,8 @@ class Text2SemanticDecoder(nn.Module):
         
 
         for idx in tqdm(range(1500)):
-            
+            if idx > max_iter:
+                break
             xy_dec, _ = self.h((xy_pos, None), mask=xy_attn_mask, cache=cache)
             logits = self.ar_predict_layer(
                 xy_dec[:, -1]
