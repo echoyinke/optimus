@@ -5,6 +5,7 @@ project_abs_path = os.getcwd()
 env_path_list = [
     os.path.join(project_abs_path, 'funclip_main'),
     os.path.join(project_abs_path, 'funclip_main/funclip/'),
+    os.path.join(project_abs_path, 'social_auto_upload_main')
 ]
 for env_path in env_path_list:
     sys.path.append(env_path)
@@ -14,7 +15,7 @@ from GPT_SoVITS_main.book_to_chunk import split_book_into_chunk
 from funclip_main.funclip.videoclipper import main as funclip_main
 os.chdir(project_abs_path)
 from tools.ffmpeg_utils import merge_video_audio_subtitle, win_dir_cvt
-from social_auto_upload_main.upload_video_to_douyin import upload_video
+from social_auto_upload_main.upload_video_to_douyin import run_upload_video
 
 
 
@@ -45,13 +46,13 @@ for speech_meta_file_path in speech_meta_file_paths:
     curr_work_dir=os.path.dirname(speech_meta_file_path)
     speech_wav_path= curr_work_dir + "\\speech.wav"
     # generate subtile use funclip
-    #funclip_main(['--stage', '1', '--file', speech_wav_path, "--output_dir", speech_file_dir])
+    #funclip_main(['--stage', '1', '--file', speech_wav_path, "--output_dir", curr_work_dir])
     # merge video audio subtitle
-    merge_video_audio_subtitle(video_path, win_dir_cvt(speech_wav_path), win_dir_cvt(curr_work_dir + "\\total.srt"), win_dir_cvt(curr_work_dir + "\\video.mp4"))
+    #merge_video_audio_subtitle(video_path, win_dir_cvt(speech_wav_path), win_dir_cvt(curr_work_dir + "\\total.srt"), win_dir_cvt(curr_work_dir + "\\video.mp4"))
     with open(curr_work_dir + "\\video.txt", 'w', encoding='utf-8') as f:
         # 写入内容到文件
         f.write(f'第 {chapter} 章 {chunk} \n#小说 #兵临城下\n')
-    upload_video(curr_work_dir)
+    run_upload_video(['--video-dir', curr_work_dir])
 
 
 

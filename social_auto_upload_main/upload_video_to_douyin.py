@@ -8,6 +8,12 @@ from douyin_uploader.main import douyin_setup, DouYinVideo
 from utils.files_times import generate_schedule_time_next_day, get_title_and_hashtags
 # import os
 # os.environ['EDR_BLOCK_PATH'] = "D:\playwright_browser\chromium-1112\chrome-win\chrome.exe"
+parser = argparse.ArgumentParser("upload_video_to_douyin")
+parser.add_argument('--video-dir', default="D:/PyProj/optimus/social_auto_upload_main/videos", type=str,
+                    help='video dir to upload')
+def run_upload_video(cmd=None):
+    args = parser.parse_args(cmd)
+    upload_video(args)
 
 def upload_video(args):
     # 获取视频文件参数路径
@@ -30,8 +36,5 @@ def upload_video(args):
         asyncio.run(app.main(), debug=False)
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser("upload_video_to_douyin")
-    parser.add_argument('--video-dir', default="D:/PyProj/optimus/social_auto_upload_main/videos", type=str,
-                        help='video dir to upload')
-    args = parser.parse_args()
-    upload_video(args)
+
+    run_upload_video()
