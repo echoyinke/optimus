@@ -46,9 +46,9 @@ for speech_meta_file_path in speech_meta_file_paths:
     curr_work_dir=os.path.dirname(speech_meta_file_path)
     speech_wav_path= curr_work_dir + "\\speech.wav"
     # generate subtile use funclip
-    #funclip_main(['--stage', '1', '--file', speech_wav_path, "--output_dir", curr_work_dir])
+    funclip_main(['--stage', '1', '--file', speech_wav_path, "--output_dir", curr_work_dir])
     # merge video audio subtitle
-    #merge_video_audio_subtitle(video_path, win_dir_cvt(speech_wav_path), win_dir_cvt(curr_work_dir + "\\total.srt"), win_dir_cvt(curr_work_dir + "\\video.mp4"))
+    merge_video_audio_subtitle(video_path, win_dir_cvt(speech_wav_path), win_dir_cvt(curr_work_dir + "\\total.srt"), win_dir_cvt(curr_work_dir + "\\video.mp4"))
     with open(curr_work_dir + "\\video.txt", 'w', encoding='utf-8') as f:
         # 写入内容到文件
         f.write(f'第 {chapter} 章 {chunk} \n#小说 #兵临城下\n')
