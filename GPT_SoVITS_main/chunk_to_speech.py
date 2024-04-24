@@ -39,11 +39,11 @@ def text_to_speech(text, ref_wav_path, save_dir, max_iter=600):
         json.dump(speech_meta_json, f, ensure_ascii=False, indent=4)
 
 def chunk_to_speech(chunk_json_path, ref_wav_path, save_dir, max_iter=600):
-    chunk_json = json.load(open(chunk_json_path, 'r'))
+    chunk_json = json.load(open(chunk_json_path, 'r', encoding='utf-8'))
     text = chunk_json["chunk_text"]
     text_to_speech(text, ref_wav_path, save_dir, max_iter)
     # copy the json file to the output dir
-    shutil.copy(chunk_json_path, save_dir)
+    shutil.move(chunk_json_path, save_dir)
 
 if __name__ == '__main__':
     text = """基本上在健身房一泡就是一整天，明显感觉这次续航改善了不少，之前音量高的话耗电会比较快，但现在正常用就能顶一天。

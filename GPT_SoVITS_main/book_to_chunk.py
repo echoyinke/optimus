@@ -70,7 +70,7 @@ def split_book_into_chunk(file_path, chunk_size=500, output_dir='../chunks_outpu
                 "create_time" : time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
             }
             chunk_json_path = os.path.join(chapter_dir, f"chunk_{j}.json")
-            json.dump(chunk_json, open(chunk_json_path, 'w'), ensure_ascii=False, indent=4)
+            json.dump(chunk_json, open(chunk_json_path, 'w', encoding='utf-8'), ensure_ascii=False, indent=4)
             chunk_json_path_list.append(chunk_json_path)
     return chunk_json_path_list
     
