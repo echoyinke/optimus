@@ -1,21 +1,17 @@
 import asyncio
 from pathlib import Path
 import sys
+import argparse
 
 from conf import BASE_DIR
 from douyin_uploader.main import douyin_setup, DouYinVideo
 from utils.files_times import generate_schedule_time_next_day, get_title_and_hashtags
-import os
-os.environ['EDR_BLOCK_PATH'] = "D:\playwright_browser\chromium-1112\chrome-win\chrome.exe"
+# import os
+# os.environ['EDR_BLOCK_PATH'] = "D:\playwright_browser\chromium-1112\chrome-win\chrome.exe"
 
-if __name__ == '__main__':
-
+def upload_video(args):
     # 获取视频文件参数路径
-    if len(sys.argv) != 2:
-        print("Usage: python upload_video_to_douyin.py <video_file_path>")
-        sys.exit(1)
-
-    filepath = Path(sys.argv[1])
+    filepath = args.video_dir
     account_file = Path(BASE_DIR / "douyin_uploader" / "account.json")
     # 获取视频目录
     folder_path = Path(filepath)
@@ -32,3 +28,10 @@ if __name__ == '__main__':
         print(f"Hashtag：{tags}")
         app = DouYinVideo(title, file, tags, publish_datetimes[index], account_file)
         asyncio.run(app.main(), debug=False)
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser("upload_video_to_douyin")
+    parser.add_argument('--video-dir', default="D:/PyProj/optimus/social_auto_upload_main/videos", type=str,
+                        help='video dir to upload')
+    args = parser.parse_args()
+    upload_video(args)

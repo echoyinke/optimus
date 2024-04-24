@@ -5,6 +5,8 @@ import platform
 
 import ffmpeg
 
+def win_dir_cvt(dir):
+    return dir.replace("\\", '/')
 def get_media_duration(file_path):
     """使用 ffmpeg-python 获取多媒体文件的时长，返回秒为单位的浮点数。"""
     try:
