@@ -6,6 +6,20 @@ from playwright.async_api import Playwright, async_playwright
 import os
 import asyncio
 import os
+import logging
+from datetime import datetime
+import logging
+logger = logging.getLogger(__name__)
+if not logger.handlers:
+    # 创建流处理器
+    handler = logging.StreamHandler()
+    # 设置日志格式
+    formatter = logging.Formatter('%(asctime)s-%(name)s-%(levelname)s-%(message)s')
+    handler.setFormatter(formatter)
+    # 添加处理器到日志记录器
+    logger.addHandler(handler)
+    logger.setLevel(logging.DEBUG)
+    logger.propagate = False
 
 
 async def cookie_auth(account_file):
@@ -18,10 +32,10 @@ async def cookie_auth(account_file):
         await page.goto("https://creator.douyin.com/creator-micro/content/upload")
         try:
             await page.wait_for_selector("div.boards-more h3:text('抖音排行榜')", timeout=5000)  # 等待5秒
-            print("[+] 等待5秒 cookie 失效")
+            logger.info("Got '抖音排行榜' which indicate cookie expire ...")
             return False
-        except:
-            print("[+] cookie 有效")
+        except Exception as e:
+            logger.info(f"cookie 有效")
             return True
 
 
@@ -30,12 +44,13 @@ async def douyin_setup(account_file, handle=False):
         if not handle:
             # Todo alert message
             return False
-        print('[+] cookie文件不存在或已失效，即将自动打开浏览器，请扫码登录，登陆后会自动生成cookie文件')
+        logger.info('[+] cookie文件不存在或已失效，即将自动打开浏览器，请扫码登录，登陆后会自动生成cookie文件')
         await douyin_cookie_gen(account_file)
     return True
 
 
 async def douyin_cookie_gen(account_file):
+    logger.info("Generating douyin cookie ...")
     async with async_playwright() as playwright:
         options = {
             'headless': False
@@ -85,9 +100,9 @@ class DouYinVideo(object):
     async def upload(self, playwright: Playwright) -> None:
         # 使用 Chromium 浏览器启动一个浏览器实例
         if self.local_executable_path:
-            browser = await playwright.chromium.launch(headless=False, executable_path=self.local_executable_path)
+            browser = await playwright.chromium.launch(headless=True, executable_path=self.local_executable_path)
         else:
-            browser = await playwright.chromium.launch(headless=False)
+            browser = await playwright.chromium.launch(headless=True)
         # 创建一个浏览器上下文，使用指定的 cookie 文件
         context = await browser.new_context(storage_state=f"{self.account_file}")
 
@@ -203,6 +218,11 @@ class DouYinVideo(object):
 
     async def main(self):
         async with async_playwright() as playwright:
-            await self.upload(playwright)
+            try:
+                await self.upload(playwright)
+            except Exception as e:
+                logger.info(f"Encounter exception while uploading video:\n{e}")
+                raise e
+
 
 

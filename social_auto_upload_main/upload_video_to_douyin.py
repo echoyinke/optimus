@@ -6,6 +6,18 @@ import argparse
 from conf import BASE_DIR
 from douyin_uploader.main import douyin_setup, DouYinVideo
 from utils.files_times import generate_schedule_time_next_day, get_title_and_hashtags
+import logging
+logger = logging.getLogger(__name__)
+if not logger.handlers:
+    # 创建流处理器
+    handler = logging.StreamHandler()
+    # 设置日志格式
+    formatter = logging.Formatter('%(asctime)s-%(name)s-%(levelname)s-%(message)s')
+    handler.setFormatter(formatter)
+    # 添加处理器到日志记录器
+    logger.addHandler(handler)
+    logger.setLevel(logging.DEBUG)
+    logger.propagate = False
 # import os
 # os.environ['EDR_BLOCK_PATH'] = "D:\playwright_browser\chromium-1112\chrome-win\chrome.exe"
 parser = argparse.ArgumentParser("upload_video_to_douyin")
@@ -24,8 +36,12 @@ def upload_video(args):
     # 获取文件夹中的所有文件
     files = list(folder_path.glob("*.mp4"))
     file_num = len(files)
+    if file_num == 0:
+        logger.info(f"No video found in {folder_path}...")
+        return
+    logger.info(f"Starting run run_upload_video {folder_path}")
     publish_datetimes = generate_schedule_time_next_day(file_num, 1, daily_times=[16])
-    cookie_setup = asyncio.run(douyin_setup(account_file, handle=False))
+    # cookie_setup = asyncio.run(douyin_setup(account_file, handle=False))
     for index, file in enumerate(files):
         title, tags = get_title_and_hashtags(str(file))
         # 打印视频文件名、标题和 hashtag
