@@ -54,12 +54,12 @@ if __name__ == '__main__':
     print(text)
 
     output_dir = '../tts_outputs/test_text'
-    ref_wav_path = '../ref_wav/zzy.wav'
+    ref_wav_path = 'ref_wav/zzy.wav'
     text_to_speech(text, ref_wav_path, output_dir)
     
     
     chunk_json_path = '../chunks_outputs/天下第一掌柜/chapter_100/chunk_1.json'
     output_dir = '../tts_outputs/test_chunk'
-    ref_wav_path = '../ref_wav/zzy.wav'
+    ref_wav_path = 'ref_wav/zzy.wav'
     chunk_to_speech(chunk_json_path, ref_wav_path, output_dir)
 
