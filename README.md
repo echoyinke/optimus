@@ -3,7 +3,9 @@
 
 
 # Setup
-* install ffmpeg
+* install [ffmpeg](https://ffmpeg.org/download.html)
+  * for [linux](https://json2video.com/how-to/ffmpeg-course/install-ffmpeg-linux.html)
+  * for [windows](https://blog.csdn.net/csdn_yudong/article/details/129182648)
 * install [torch](https://pytorch.org/get-started/locally/)
 
 ## GPT_SoVITS
