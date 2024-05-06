@@ -2,10 +2,10 @@
     "novel_split_path": "D:\\temp_medias\\binglinchengxia\\\u5175\u4e34\u57ce\u4e0b",
     "produced": {
         "curr_chapter": 0,
-        "curr_chunk": 4
+        "curr_chunk": 0
     },
     "consumed": {
         "curr_chapter": 0,
-        "curr_chunk": 0
+        "curr_chunk": 4
     }
 }
