@@ -22,6 +22,7 @@ for env_path in env_path_list:
     sys.path.append(env_path)
 # print("sys.path:", sys.path)
 from pathlib import Path
+import os
 
 
 # cd到子目录GPT_SoVITS_main下才能正确加载GPT_SoVITS模块
@@ -31,6 +32,8 @@ from GPT_SoVITS_main.book_to_chunk import split_book_into_chunk
 from GPT_SoVITS_main.chunk_to_speech import chunk_to_speech
 # 重新cd到项目根目录
 os.chdir(project_abs_path)
+from optimus_tools.log_utils import get_logger
+logger = get_logger(__name__)
 
 
 # 0. 把小说兵临城下放到文件夹binglinchengxia
@@ -50,11 +53,17 @@ def produce_chunk_to_speech(chunk_path, ref_wav_path):
     # 使用os.path.splitext去除文件扩展名，留下 'chunk_1'
     file_name = os.path.splitext(file_name_with_extension)[0]
     output_path = os.path.join(directory_path, file_name)
+    if os.path.exists(output_path+"/speech.wav"):
+        logger.info("speech.wav already exists.")
+        return output_path
     chunk_to_speech(chunk_path, ref_wav_path, output_path, max_iter=600)
     return output_path
 
 def speech2subtitle(curr_work_dir):
     speech_wav_path = Path(curr_work_dir)/"speech.wav"
+    if os.path.exists(curr_work_dir + "/total.srt"):
+        logger.info("total.srt already exists.")
+        return curr_work_dir
     funclip_main(['--stage', '1', '--file', str(speech_wav_path), "--output_dir", curr_work_dir])
     return curr_work_dir
 

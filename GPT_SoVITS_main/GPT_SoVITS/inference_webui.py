@@ -364,7 +364,7 @@ def get_tts_wav(ref_wav_path, prompt_text, prompt_language, text, text_language,
         text = cut5(text)
     while "\n\n" in text:
         text = text.replace("\n\n", "\n")
-    print(i18n("实际输入的目标文本(切句后):"), text)
+    # print(i18n("实际输入的目标文本(切句后):"), text)
     texts = text.split("\n")
     texts = merge_short_text_in_array(texts, 5)
     audio_opt = []
@@ -497,9 +497,9 @@ def generate_tts_wav(ref_wav_path, prompt_text, prompt_language, text, text_lang
         if (len(text.strip()) == 0):
             continue
         if (text[-1] not in splits): text += "。" if text_language != "en" else "."
-        print(i18n("实际输入的目标文本(每句):"), text)
+        # print(i18n("实际输入的目标文本(每句):"), text)
         phones2,bert2,norm_text2=get_phones_and_bert(text, text_language)
-        print(i18n("前端处理后的文本(每句):"), norm_text2)
+        # print(i18n("前端处理后的文本(每句):"), norm_text2)
         if not ref_free:
             bert = torch.cat([bert1, bert2], 1)
             all_phoneme_ids = torch.LongTensor(phones1+phones2).to(device).unsqueeze(0)

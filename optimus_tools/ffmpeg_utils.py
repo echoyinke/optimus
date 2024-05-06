@@ -1,8 +1,8 @@
 import subprocess
 import platform
-
-
-
+import os
+from .log_utils import get_logger
+logger = get_logger(__name__)
 import ffmpeg
 
 def win_dir_cvt(dir):
@@ -19,6 +19,9 @@ def get_media_duration(file_path):
         print("Failed to retrieve media duration:", e)
         return None
 def merge_video_audio_subtitle(video_path, audio_path, subtitle_path, output_path):
+    if os.path.exists(output_path):
+        logger.info("video.mp4 already exists.")
+        return
     duration=get_media_duration(audio_path)
     if platform.system() == 'Windows':
         subtitle_path=subtitle_path.replace("\\", "/")
@@ -41,7 +44,7 @@ def merge_video_audio_subtitle(video_path, audio_path, subtitle_path, output_pat
     ]
 
     try:
-        print("Running FFmpeg command...")
+        print(f"Running FFmpeg command: {command}")
         subprocess.run(command, check=True)
         print("Video processing completed successfully!")
     except subprocess.CalledProcessError as e:

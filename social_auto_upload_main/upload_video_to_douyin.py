@@ -49,7 +49,7 @@ def upload_video(args):
         print(f"标题：{title}")
         print(f"Hashtag：{tags}")
         app = DouYinVideo(title, file, tags, publish_datetimes[index], account_file)
-        asyncio.run(app.main(), debug=False)
+        asyncio.run(app.main(), debug=True)
 
 if __name__ == '__main__':
 
