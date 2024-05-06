@@ -28,6 +28,7 @@ def connect_to_db():
 
 def insert_into_aigcFileList(conn, data):
     """将数据插入到aigcFileList表"""
+    inserted_id = 1
     try:
         with conn.cursor() as cursor:
             # 假设createTime和updateTime需要当前时间
@@ -45,33 +46,36 @@ def insert_into_aigcFileList(conn, data):
             """
             # 执行SQL语句
             cursor.execute(sql, data)
+            # 获取插入数据的主键 ID
+            inserted_id = cursor.lastrowid
             conn.commit()
     except Exception as e:
         logging.error(f"Error inserting data into aigcFileList: {e}")
         raise
+    return inserted_id
 
         # 可以在这里添加更多的数据库操作函数...
 
 # todo update逻辑
-def updateStatus(conn, data, status):
+def updateStatus(conn, id, status):
     """将数据插入到aigcFileList表"""
     try:
         with conn.cursor() as cursor:
             # 假设createTime和updateTime需要当前时间
             import datetime
             now = datetime.datetime.now()
-            data['updateTime'] = now
+            updateTime = now
 
             # 构建SQL语句
             sql = """  
-            INSERT INTO aigcFileList (name, type, hashTag, link, status, partition, createTime, updateTime, bizDate)  
-            VALUES (%(name)s, %(type)s, %(hashTag)s, %(link)s, %(status)s, %(partition)s, %(createTime)s, %(updateTime)s, %(bizDate)s)  
+            UPDATE aigcFileList 
+            SET status = ?, updateTime = ?
+            WHERE id = ?
             """
             # 执行SQL语句
-            cursor.execute(sql, data)
+            cursor.execute(sql, status,updateTime, id)
             conn.commit()
     except Exception as e:
-        logging.error(f"Error inserting data into aigcFileList: {e}")
+        logging.error(f"Error update data into aigcFileList: {e}")
         raise
 
-        # 可以在这里添加更多的数据库操作函数...
