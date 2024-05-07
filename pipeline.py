@@ -26,15 +26,24 @@ from pathlib import Path
 from optimus_tools.ffmpeg_utils import merge_video_audio_subtitle, make_cover
 import subprocess
 import re
+import random
 
 
 
 produce_offset_file = 'D:\PyProj\optimus\produce_offset.json'
 consume_offset_file = 'D:\PyProj\optimus\consume_offset.json'
 ref_wav_path = 'D:/PyProj/optimus/GPT_SoVITS_main/ref_wav/我和竹马醉酒后疯狂一夜，我本以为我十年的喜欢终于有了结果，谁知醒后，竹马只是淡淡递给我一粒药。.wav'
-jieya_video_path="D:/temp_medias/jieya_video/chongyaji.mp4"
+jieya_video_folder="D:/temp_medias/jieya_video/"
 cover_path="D:/temp_medias/binglinchengxia/cover.jpg"
 
+def get_jieya_video(folder_path):
+    if not os.path.isdir(folder_path):
+        raise ValueError(f"{folder_path} is not a valid directory")
+    files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
+    if not files:
+        raise ValueError(f"No files found in {folder_path}")
+    random_file = random.choice(files)
+    return os.path.join(folder_path, random_file)
 def speech2subtitle(curr_work_dir):
     speech_wav_path = Path(curr_work_dir)/"speech.wav"
     if os.path.exists(curr_work_dir + "/total.srt"):
@@ -68,7 +77,7 @@ def count_chapters_and_chunks(directory):
             chunks_per_chapter[chapter] = len(chunks)
 
     return total_chapter, chunks_per_chapter
-def save_progress(progress):
+def save_progress(progress, offset_file):
     with open(offset_file, 'w', encoding='utf-8') as f:
         json.dump(progress, f, indent=4)
 
@@ -76,8 +85,9 @@ def load_progress(offset_file):
     with open(offset_file, 'r', encoding='utf-8') as f:
         return json.load(f)
 
-def producer(queue, progress):
+def producer(queue, offset_path):
     logger = get_logger("Producer")
+    progress = load_progress(offset_path)
     path = Path(progress['novel_split_path'])
     novel_name= path.name
     total_chapters, chunks_per_chapter = count_chapters_and_chunks(path)
@@ -90,20 +100,21 @@ def producer(queue, progress):
             logger.info(f"producing chunk: {chunk_path}")
             curr_work_dir = produce_chunk_to_speech(chunk_path, ref_wav_path)
             speech2subtitle(curr_work_dir)
-            merge_video_audio_subtitle(jieya_video_path, curr_work_dir+"/speech.wav", curr_work_dir +"/total.srt", curr_work_dir+"/video.mp4")
+            merge_video_audio_subtitle(get_jieya_video(jieya_video_folder), curr_work_dir+"/speech.wav", curr_work_dir +"/total.srt", curr_work_dir+"/video.mp4")
             gen_video_pub_txt(curr_work_dir, novel_name=novel_name, chapter=chapter, chunk=chunk)
             make_cover(cover_path, novel_name, chapter, chunk, curr_work_dir+"/cover.jpg")
             queue.put(curr_work_dir)
             logging.info(f'Produced {curr_work_dir}')
             progress['produced']['curr_chapter'] = chapter
             progress['produced']['curr_chunk'] = chunk
-            save_progress(progress)
+            save_progress(progress, offset_path)
 
-def consumer(queue, progress):
+def consumer(queue, offset_path):
     logger = get_logger("Consumer:")
     while True:
         try:
             curr_work_dir = queue.get()
+            progress = load_progress(offset_path)
             logger.info(f'Consuming got:{curr_work_dir}')
             chapter_match = re.search(r'chapter_(\d+)', curr_work_dir)
             chunk_match = re.search(r'chunk_(\d+)', curr_work_dir)
@@ -113,7 +124,7 @@ def consumer(queue, progress):
             logging.info(f'Consumed {curr_work_dir}')
             progress['consumed']['curr_chapter'] = chapter
             progress['consumed']['curr_chunk'] = chunk
-            save_progress(progress)
+            save_progress(progress, offset_path)
         except Exception as e:
             logger.error(f'Consume exception...\n{e}')
 def debug_consume(curr_work_dir):
@@ -126,16 +137,13 @@ def debug_consume(curr_work_dir):
     # data_queue.task_done()
 if __name__ == '__main__':
 
-    # 加载进度
-    produce_progress = load_progress(produce_offset_file)
-    consume_progress = load_progress(consume_offset_file)
 
     q = Queue()
 
     # debug_work_dir='D:\\temp_medias\\binglinchengxia\\兵临城下\\chapter_0\\chunk_0'
 
-    producer_process = Process(target=producer, args=(q,produce_progress))
-    consumer_process = Process(target=consumer, args=(q,consume_progress))
+    producer_process = Process(target=producer, args=(q,produce_offset_file))
+    consumer_process = Process(target=consumer, args=(q,consume_offset_file))
 
     producer_process.start()
     consumer_process.start()
