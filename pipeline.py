@@ -29,7 +29,8 @@ import re
 
 
 
-offset_file = 'D:\PyProj\optimus\offset.json'
+produce_offset_file = 'D:\PyProj\optimus\produce_offset.json'
+consume_offset_file = 'D:\PyProj\optimus\consume_offset.json'
 ref_wav_path = 'D:/PyProj/optimus/GPT_SoVITS_main/ref_wav/我和竹马醉酒后疯狂一夜，我本以为我十年的喜欢终于有了结果，谁知醒后，竹马只是淡淡递给我一粒药。.wav'
 jieya_video_path="D:/temp_medias/jieya_video/chongyaji.mp4"
 cover_path="D:/temp_medias/binglinchengxia/cover.jpg"
@@ -126,13 +127,15 @@ def debug_consume(curr_work_dir):
 if __name__ == '__main__':
 
     # 加载进度
-    progress = load_progress(offset_file)
+    produce_progress = load_progress(produce_offset_file)
+    consume_progress = load_progress(consume_offset_file)
+
     q = Queue()
 
     # debug_work_dir='D:\\temp_medias\\binglinchengxia\\兵临城下\\chapter_0\\chunk_0'
 
-    producer_process = Process(target=producer, args=(q,progress))
-    consumer_process = Process(target=consumer, args=(q,progress))
+    producer_process = Process(target=producer, args=(q,produce_progress))
+    consumer_process = Process(target=consumer, args=(q,consume_progress))
 
     producer_process.start()
     consumer_process.start()
