@@ -58,7 +58,7 @@ async def douyin_cookie_gen(account_file):
 
 
 class DouYinVideo(object):
-    def __init__(self, title, file_path, tags, publish_date: datetime, account_file):
+    def __init__(self, title, file_path, tags, publish_date: datetime, account_file, cover_file_path):
         self.title = title  # 视频标题
         self.file_path = file_path
         self.tags = tags
@@ -66,6 +66,7 @@ class DouYinVideo(object):
         self.account_file = account_file
         self.date_format = '%Y年%m月%d日 %H:%M'
         self.local_executable_path = ""  # change me
+        self.cover_file_path = cover_file_path
 
     async def set_schedule_time_douyin(self, page, publish_date):
         # 选择包含特定文本内容的 label 元素
@@ -182,6 +183,16 @@ class DouYinVideo(object):
 
         # if self.publish_date != 0:
         #    await self.set_schedule_time_douyin(page, self.publish_date)
+
+        # 上传封面
+        if(os.path.exists(self.cover_file_path)):
+            print("  [-] 正在上传封面...")
+            await page.get_by_text("选择封面").click()
+            await page.get_by_text("上传封面").click()
+            # await page.get_by_text("点击上传 或直接将图片文件拖入此区域").click()
+            await page.locator('input.semi-upload-hidden-input').set_input_files(self.cover_file_path)
+            await page.get_by_role("button", name="完成").click()
+
 
         # 判断视频是否发布成功
         while True:

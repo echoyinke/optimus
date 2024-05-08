@@ -44,11 +44,12 @@ def upload_video(args):
     # cookie_setup = asyncio.run(douyin_setup(account_file, handle=False))
     for index, file in enumerate(files):
         title, tags = get_title_and_hashtags(str(file))
+        cover_file_path = str(file).replace(".mp4",".jpg")
         # 打印视频文件名、标题和 hashtag
         print(f"视频文件名：{file}")
         print(f"标题：{title}")
         print(f"Hashtag：{tags}")
-        app = DouYinVideo(title, file, tags, publish_datetimes[index], account_file)
+        app = DouYinVideo(title, file, tags, publish_datetimes[index], account_file, cover_file_path)
         asyncio.run(app.main(), debug=False)
 
 if __name__ == '__main__':
