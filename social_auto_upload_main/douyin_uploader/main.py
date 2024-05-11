@@ -95,7 +95,8 @@ class DouYinVideo(object):
         else:
             browser = await playwright.chromium.launch(headless=True)
         # 创建一个浏览器上下文，使用指定的 cookie 文件
-        context = await browser.new_context(storage_state=f"{self.account_file}")
+        chrome = playwright.devices['Desktop Chrome']
+        context = await browser.new_context(**chrome, storage_state=f"{self.account_file}")
 
         # 创建一个新的页面
         page = await context.new_page()
