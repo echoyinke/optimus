@@ -94,6 +94,92 @@ def add_cover(cover_path, video_path, output_path):
         print("Video processing completed successfully!")
     except subprocess.CalledProcessError as e:
         print("Failed to process video:", e)
+def concat_images_to_video(images_with_duration_list, output_path, special_effect=None):
+    """
+    将images_with_duration_list中的每一个image和duration生成视频，并将所有视频合并成一个视频
+    :param images_with_duration_list:
+      [{"image_path" : "./images/1.jpg", "duration" : 5.4}, 
+       {"image_path" : "/Users/AI图片素材/images/2.jpg", "duration" : 2.1},
+       {"image_path" : "./images/3.jpg", "duration" : 4.2}]
+    - image_path是图片路径（可以是相对路径，也可以是绝对路径）
+    - duration是图片显示时间
+    
+    :param output_path: 合并后的视频路径
+    :param special_effect: 特效，目前支持"zoompan left_up"和"zoompan center"
+    """
+    # 根据每一个image和duration生成视频
+    tmp_output_video_path_list = []
+    for image_with_duration in images_with_duration_list:
+        image_path = image_with_duration["image_path"]
+        duration = image_with_duration["duration"]
+        tmp_output_video_path = image_path.replace(".jpg", ".mp4")
+
+        fps = 25
+        # 原始不缩放
+        if special_effect is None:
+            command = [
+                'ffmpeg',
+                '-r', f'{1/duration}', # 每秒帧数, 1/duration, 这样可以控制每张图片的显示时间
+                '-f', 'image2', # 输入格式
+                '-i', image_path, # 输入图片路径
+                '-vf', 'scale=w=800:h=600', # 图片的宽高
+                tmp_output_video_path # 输出视频路径
+            ]
+        # 动态缩放
+        # 聚焦放大到左上角
+        elif special_effect == "zoompan left_up":
+            command = [
+                'ffmpeg',
+                '-i', image_path, # 输入图片路径
+                '-filter_complex', # 滤镜复合
+                f"zoompan=z='zoom+{0.2/(fps*duration)}':s=1000x600:fps={fps}:d={fps}*{duration}", # 缩放, z代表每一帧的缩放比例（这里代表总共放缩到原来的1.2倍）, s代表输出视频的宽高, fps代表每秒帧数, d代表总共的帧数
+                tmp_output_video_path # 输出视频路径
+            ]
+        # 聚焦放大到中心
+        elif special_effect == "zoompan center":
+            command = [
+                'ffmpeg',
+                '-i', image_path, # 输入图片路径
+                '-filter_complex', # 滤镜复合
+                f"zoompan=x='iw/2*(1-1/zoom)':y='ih/2*(1-1/zoom)':z='zoom+{0.2/(fps*duration)}':fps={fps}:d={fps}*{duration}:s=1000x600", # x和y代表缩放的中心点，x='iw/2'和y='ih/2'代表画面的中心
+                tmp_output_video_path # 输出视频路径
+            ]
+        else:
+            raise ValueError("special_effect参数不支持")
+
+        try:
+            print(f"Running FFmpeg command: {command}")
+            subprocess.run(command, check=True)
+            print("Video processing completed successfully!")
+        except subprocess.CalledProcessError as e:
+            print("Failed to process video:", e)
+        tmp_output_video_path_list.append(tmp_output_video_path)
+
+    # 合并视频， 必须要先将所有需要合并的视频路径写入到一个txt文件中，再合并
+    with open("contact_videos.txt", "w") as f:
+        for tmp_output_video_path in tmp_output_video_path_list:
+            f.write(f"file '{tmp_output_video_path}'\n")
+
+    concat_command = [
+        'ffmpeg',
+        '-f', 'concat',
+        '-safe', '0', # 允许文件名中有特殊字符
+        '-i', 'contact_videos.txt', # 输入的合并文件
+        '-c', 'copy',
+        '-y', output_path
+    ]
+
+    try:
+        print(f"Running FFmpeg command: {concat_command}")
+        subprocess.run(concat_command, check=True)
+        print("Video concatenation completed successfully!")
+    except subprocess.CalledProcessError as e:
+        print("Failed to concat videos:", e)
+    
+    # 删除临时视频
+    for tmp_output_video_path in tmp_output_video_path_list:
+        os.remove(tmp_output_video_path)
+    os.remove("contact_videos.txt")
 
 if __name__ == '__main__':
     video_path =  'D:/temp_medias/jieya_video/chongyaji.mp4'
