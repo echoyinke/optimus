@@ -4,7 +4,7 @@ from http_utils import deepseekv2
 from http_utils import tongyiwx_call
 
 
-def split_srt_to_shots(sentence_path, shots_num, save_path):
+def subtile_to_video_shots(sentence_path, video_shots_num, save_dir):
     """
     把字幕文件（sentences）拆分成镜头,方便后面文生图
     """
@@ -13,7 +13,7 @@ def split_srt_to_shots(sentence_path, shots_num, save_path):
     file_content = file_content.replace("'", '"')
     data = json.loads(file_content)
     total_duration = data[-1]['end'] - data[0]['start']
-    segment_duration = total_duration // shots_num
+    segment_duration = total_duration // video_shots_num
     merged_data = []
     current_segment = {'text': '', 'start': 0, 'end': None, 'duration': 0}
     for i, item in enumerate(data):
@@ -32,14 +32,18 @@ def split_srt_to_shots(sentence_path, shots_num, save_path):
         merged_data[-1]['duration'] = current_segment['end'] - merged_data[-1]['start']
     else:
         merged_data.append(current_segment)
-    with open(save_path, 'w', encoding='utf-8') as f:
+    with open(f"{save_dir}/video_shots_info.json", 'w', encoding='utf-8') as f:
         json.dump(merged_data, f, ensure_ascii=False, indent=4)
-    # 打印合并后的数据
-    return json.dumps(merged_data, ensure_ascii=False, indent=4)
 
+def subtitle2video(work_dir, video_shots_num):
+    sentence_path = f"{work_dir}/sentences"
+    subtile_to_video_shots(sentence_path, video_shots_num, work_dir)
+    video_shot_info_path = f"{work_dir}/video_shots_info.json"
+    video_shots_info=llm_augment_and_gen_image(video_shot_info_path, work_dir)
+    concat_images_to_video(images_with_duration_list=video_shots_info, output_path=f"{work_dir}/video.mp4")
 
-def llm_augment_and_gen_image(shots_json_path, save_dir):
-    with open(shots_path, 'r', encoding='utf-8') as f:
+def llm_augment_and_gen_image(video_shots_info_path, work_dir):
+    with open(video_shots_info_path, 'r', encoding='utf-8') as f:
         # 使用 json.load() 从文件中加载数据
         data = json.load(f)
     chunk_text = ''
@@ -49,12 +53,12 @@ def llm_augment_and_gen_image(shots_json_path, save_dir):
         aug_prompt = deepseekv2(d['text'], chunk_text)
         prompt = json.loads(aug_prompt)['choices'][0]['message']['content']
         d['aug_prompt'] = prompt
-        tongyiwx_call(prompt, f"{save_dir}/{i}.jpg")
-        d['image_path'] = prompt
-    with open(shots_json_path, 'w', encoding='utf-8') as f:
+        image_path= f"{work_dir}/images/{i}.jpg"
+        tongyiwx_call(prompt, image_path)
+        d['image_path'] = image_path
+    with open(video_shots_info_path, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
-    return json.dump(data, f, ensure_ascii=False, indent=4)
-
+    return json.dump(data, ensure_ascii=False, indent=4)
 
 
 if __name__ == '__main__':

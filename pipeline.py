@@ -100,6 +100,7 @@ def producer(queue, offset_path):
             logger.info(f"producing chunk: {chunk_path}")
             curr_work_dir = produce_chunk_to_speech(chunk_path, ref_wav_path)
             speech2subtitle(curr_work_dir)
+            text2video(curr_work_dir)
             merge_video_audio_subtitle(get_jieya_video(jieya_video_folder), curr_work_dir+"/speech.wav", curr_work_dir +"/total.srt", curr_work_dir+"/video.mp4")
             gen_video_pub_txt(curr_work_dir, novel_name=novel_name, chapter=chapter, chunk=chunk)
             make_cover(cover_path, novel_name, chapter, chunk, curr_work_dir+"/cover.jpg")
