@@ -118,8 +118,9 @@ def concat_images_to_video(images_with_duration_list, output_path, special_effec
         tmp_output_video_path = image_path.replace(".jpg", ".mp4")
 
         fps = 25
+        zoom_factor=0.5
         # 原始不缩放
-        items = ["zoompan left_up", "zoompan center", None]
+        items = ["zoompan left_up", "zoompan right_up","zoompan left_down","zoompan left_down","zoompan center"]
 
         special_effect = random.choice(items)
         if special_effect is None:
@@ -138,8 +139,35 @@ def concat_images_to_video(images_with_duration_list, output_path, special_effec
                 'ffmpeg',
                 '-i', image_path, # 输入图片路径
                 '-filter_complex', # 滤镜复合
-                f"zoompan=z='zoom+{0.2/(fps*duration)}':s=1000x600:fps={fps}:d={fps}*{duration}", # 缩放, z代表每一帧的缩放比例（这里代表总共放缩到原来的1.2倍）, s代表输出视频的宽高, fps代表每秒帧数, d代表总共的帧数
+                f"zoompan=z='zoom+{zoom_factor/(fps*duration)}':s=1000x600:fps={fps}:d={fps}*{duration}", # 缩放, z代表每一帧的缩放比例（这里代表总共放缩到原来的1.2倍）, s代表输出视频的宽高, fps代表每秒帧数, d代表总共的帧数
                 tmp_output_video_path # 输出视频路径
+            ]
+        elif special_effect == "zoompan left_down":
+            command = [
+                'ffmpeg',
+                '-i', image_path,  # 输入图片路径
+                '-filter_complex',  # 滤镜复合
+                f"zoompan=x='0':y='ih*(1-1/zoom)':z='zoom+{zoom_factor / (fps * duration)}':fps={fps}:d={fps}*{duration}:s=1000x600",
+                # x和y代表缩放的中心点，x='iw/2'和y='ih/2'代表画面的中心
+                tmp_output_video_path  # 输出视频路径
+            ]
+        elif special_effect == "zoompan right_up":
+            command = [
+                'ffmpeg',
+                '-i', image_path,  # 输入图片路径
+                '-filter_complex',  # 滤镜复合
+                f"zoompan=x='iw*(1-1/zoom)':y='0':z='zoom+{zoom_factor / (fps * duration)}':fps={fps}:d={fps}*{duration}:s=1000x600",
+                # x和y代表缩放的中心点，x='iw/2'和y='ih/2'代表画面的中心
+                tmp_output_video_path  # 输出视频路径
+            ]
+        elif special_effect == "zoompan right_down":
+            command = [
+                'ffmpeg',
+                '-i', image_path,  # 输入图片路径
+                '-filter_complex',  # 滤镜复合
+                f"zoompan=x='iw*(1-1/zoom)':y='ih*(1-1/zoom)':z='zoom+{zoom_factor / (fps * duration)}':fps={fps}:d={fps}*{duration}:s=1000x600",
+                # x和y代表缩放的中心点，x='iw/2'和y='ih/2'代表画面的中心
+                tmp_output_video_path  # 输出视频路径
             ]
         # 聚焦放大到中心
         elif special_effect == "zoompan center":
@@ -147,7 +175,7 @@ def concat_images_to_video(images_with_duration_list, output_path, special_effec
                 'ffmpeg',
                 '-i', image_path, # 输入图片路径
                 '-filter_complex', # 滤镜复合
-                f"zoompan=x='iw/2*(1-1/zoom)':y='ih/2*(1-1/zoom)':z='zoom+{0.2/(fps*duration)}':fps={fps}:d={fps}*{duration}:s=1000x600", # x和y代表缩放的中心点，x='iw/2'和y='ih/2'代表画面的中心
+                f"zoompan=x='iw/2*(1-1/zoom)':y='ih/2*(1-1/zoom)':z='zoom+{zoom_factor/(fps*duration)}':fps={fps}:d={fps}*{duration}:s=1000x600", # x和y代表缩放的中心点，x='iw/2'和y='ih/2'代表画面的中心
                 tmp_output_video_path # 输出视频路径
             ]
         else:
