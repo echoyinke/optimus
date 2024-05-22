@@ -15,8 +15,8 @@ env_path_list = [
 ]
 for env_path in env_path_list:
     sys.path.append(env_path)
-os.chdir(os.path.join(project_abs_path, 'GPT_SoVITS_main'))
-from GPT_SoVITS_main.chunk_to_speech import chunk_to_speech
+# os.chdir(os.path.join(project_abs_path, 'GPT_SoVITS_main'))
+# from GPT_SoVITS_main.chunk_to_speech import chunk_to_speech
 os.chdir(os.path.join(project_abs_path, 'funclip_main'))
 from funclip_main.funclip.videoclipper import main as funclip_main
 os.chdir(project_abs_path)
@@ -24,6 +24,8 @@ os.chdir(project_abs_path)
 from optimus_tools.log_utils import get_logger
 from pathlib import Path
 from optimus_tools.ffmpeg_utils import merge_video_audio_subtitle, make_cover
+from optimus_tools.text2image_utils import subtitle2video
+from optimus_tools.chunk_to_speech import chunk_to_speech as asure_chunk_to_speech
 import subprocess
 import re
 import random
@@ -97,10 +99,11 @@ def producer(queue, offset_path):
         total_chunks_this_chapter = chunks_per_chapter["chapter_" + str(chapter)]
         for chunk in range(start_chunk, total_chunks_this_chapter):
             chunk_path = path/f"chapter_{chapter}/chunk_{chunk}.json"
+            curr_work_dir = str(path / f"chapter_{chapter}/chunk_{chunk}")
             logger.info(f"producing chunk: {chunk_path}")
-            curr_work_dir = produce_chunk_to_speech(chunk_path, ref_wav_path)
+            asure_chunk_to_speech(chunk_path, curr_work_dir)
             speech2subtitle(curr_work_dir)
-            text2video(curr_work_dir)
+            subtitle2video(work_dir=curr_work_dir, video_shots_num=5)
             merge_video_audio_subtitle(get_jieya_video(jieya_video_folder), curr_work_dir+"/speech.wav", curr_work_dir +"/total.srt", curr_work_dir+"/video.mp4")
             gen_video_pub_txt(curr_work_dir, novel_name=novel_name, chapter=chapter, chunk=chunk)
             make_cover(cover_path, novel_name, chapter, chunk, curr_work_dir+"/cover.jpg")

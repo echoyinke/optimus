@@ -6,6 +6,9 @@ import uuid
 import math
 import wave
 import contextlib
+from .microsoft_azure_api import AzureTextToSpeech
+subscription_key = "dc00d3aa5b204db4a4ffbba9b96560d3"
+azure_tts = AzureTextToSpeech(subscription_key)
 
 
 def text_to_speech(tts_fun, text, save_dir, **kwargs):
@@ -33,7 +36,7 @@ def text_to_speech(tts_fun, text, save_dir, **kwargs):
     with open(os.path.join(save_dir, f"speech_meta.json"), 'w') as f:
         json.dump(speech_meta_json, f, ensure_ascii=False, indent=4)
 
-def chunk_to_speech(chunk_json_path, tts_fun, text, save_dir, **kwargs):
+def chunk_to_speech(chunk_json_path,save_dir, tts_fun=azure_tts.tts, **kwargs):
     chunk_json = json.load(open(chunk_json_path, 'r', encoding='utf-8'))
     text = chunk_json["chunk_text"]
     text_to_speech(tts_fun, text, save_dir, **kwargs)
