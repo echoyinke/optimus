@@ -1,9 +1,12 @@
+import random
 import subprocess
 import platform
 import os
-from .log_utils import get_logger
+from log_utils import get_logger
 logger = get_logger(__name__)
 import ffmpeg
+import random
+
 
 def win_dir_cvt(dir):
     return dir.replace("\\", '/')
@@ -116,6 +119,9 @@ def concat_images_to_video(images_with_duration_list, output_path, special_effec
 
         fps = 25
         # 原始不缩放
+        items = ["zoompan left_up", "zoompan center", None]
+
+        special_effect = random.choice(items)
         if special_effect is None:
             command = [
                 'ffmpeg',
@@ -182,12 +188,16 @@ def concat_images_to_video(images_with_duration_list, output_path, special_effec
     os.remove("contact_videos.txt")
 
 if __name__ == '__main__':
-    video_path =  'D:/temp_medias/jieya_video/chongyaji.mp4'
-    audio_path = 'D:/temp_medias/dev/speech.wav'
-    subtitle_path = 'D:/temp_medias/dev/total.srt'
-    output_path = 'D:/temp_medias/output.mp4'
-    input_cover = 'D:/temp_medias/binglinchengxia/cover.jpg'
-    cover_path= 'D:/temp_medias/binglinchengxia/cover2.jpg'
-    #merge_video_audio_subtitle(video_path,audio_path ,output_cover, subtitle_path,output_path)
-    # make_cover(input_cover,1, 0, output_cover)
-    add_cover(video_path, cover_path, output_path)
+    # video_path =  'D:/temp_medias/jieya_video/chongyaji.mp4'
+    # audio_path = 'D:/temp_medias/dev/speech.wav'
+    # subtitle_path = 'D:/temp_medias/dev/total.srt'
+    # output_path = 'D:/temp_medias/output.mp4'
+    # input_cover = 'D:/temp_medias/binglinchengxia/cover.jpg'
+    # cover_path= 'D:/temp_medias/binglinchengxia/cover2.jpg'
+    # #merge_video_audio_subtitle(video_path,audio_path ,output_cover, subtitle_path,output_path)
+    # # make_cover(input_cover,1, 0, output_cover)
+    # add_cover(video_path, cover_path, output_path)
+    shots_path = "/Users/yinke/PycharmProjects/optimus/optimus_tools/outputs/aug_split_shots.json"
+    with open(shots_path, 'r', encoding='utf-8') as f:
+        # 使用 json.load() 从文件中加载数据
+        data = json.load(f)
