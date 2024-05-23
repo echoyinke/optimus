@@ -37,7 +37,7 @@ def deepseekv2(shot, chunk):
             },
             {
                 "role": "user",
-                "content": f"请根据我下面给你的小说段落,针对其中抽取的一部分，生成1张漫画镜头描述，记住，请尽量根据抽取的这一部分生成描述，这个描述请尽量细致，你可以适当的丰富它，以使的画面更加吸引人，越是惊悚夸张越好。抽取的部分是：{shot}, 我是从这段里面抽取的：{chunk}"
+                "content": f"请根据我下面给你的小说段落,针对其中抽取的一部分，生成1张漫画镜头描述，记住，请尽量根据抽取的这一部分生成描述，这个描述请尽量细致，你可以适当的丰富它，以使的画面更加吸引人。抽取的部分是：{shot}, 我是从这段里面抽取的：{chunk}"
             }
         ]
     })
@@ -69,6 +69,7 @@ def tongyiwx_call(prompt, save_path):
     else:
         print('Failed, status_code: %s, code: %s, message: %s' %
               (rsp.status_code, rsp.code, rsp.message))
+    return rsp.code
 
 
 if __name__ == '__main__':

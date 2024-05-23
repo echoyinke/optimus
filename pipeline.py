@@ -104,9 +104,9 @@ def producer(queue, offset_path):
             asure_chunk_to_speech(chunk_path, curr_work_dir)
             speech2subtitle(curr_work_dir)
             subtitle2video(work_dir=curr_work_dir, video_shots_num=5)
-            merge_video_audio_subtitle(get_jieya_video(jieya_video_folder), curr_work_dir+"/speech.wav", curr_work_dir +"/total.srt", curr_work_dir+"/video.mp4")
+            merge_video_audio_subtitle(f"{curr_work_dir}/concat.mp4", curr_work_dir+"/speech.wav", curr_work_dir +"/total.srt", curr_work_dir+"/video.mp4")
             gen_video_pub_txt(curr_work_dir, novel_name=novel_name, chapter=chapter, chunk=chunk)
-            make_cover(cover_path, novel_name, chapter, chunk, curr_work_dir+"/cover.jpg")
+            make_cover(f"{curr_work_dir}/0.jpg", novel_name, chapter, chunk, curr_work_dir+"/cover.jpg")
             queue.put(curr_work_dir)
             logging.info(f'Produced {curr_work_dir}')
             progress['produced']['curr_chapter'] = chapter
