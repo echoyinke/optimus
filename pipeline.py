@@ -8,8 +8,8 @@ project_abs_path = os.getcwd()
 env_path_list = [
     os.path.join(project_abs_path, 'funclip_main'),
     os.path.join(project_abs_path, 'funclip_main/funclip/'),
-    os.path.join(project_abs_path, 'GPT_SoVITS_main/'),
-    os.path.join(project_abs_path, 'GPT_SoVITS_main/GPT_SoVITS'),
+    # os.path.join(project_abs_path, 'GPT_SoVITS_main/'),
+    # os.path.join(project_abs_path, 'GPT_SoVITS_main/GPT_SoVITS'),
     os.path.join(project_abs_path, 'social_auto_upload_main'),
     os.path.join(project_abs_path, 'social_auto_upload_main/douyin_uploader')
 ]
@@ -25,8 +25,9 @@ from optimus_tools.log_utils import get_logger
 from pathlib import Path
 from optimus_tools.ffmpeg_utils import merge_video_audio_subtitle, make_cover
 from optimus_tools.text2image_utils import subtitle2video
-from optimus_tools.chunk_to_speech import chunk_to_speech as asure_chunk_to_speech
+from optimus_tools.chunk_to_speech import chunk_to_speech as asure_chunk_to_speech, text_to_speech as asure_text2speech
 import subprocess
+from optimus_tools.text_utils import split_text
 import re
 import random
 
@@ -56,17 +57,6 @@ def speech2subtitle(curr_work_dir):
 def gen_video_pub_txt(curr_work_dir, novel_name, chapter, chunk):
     with open(Path(curr_work_dir)/"video.txt", 'w', encoding='utf-8') as f:
         f.write(f'第 {chapter} 章 {chunk} \n#小说 #{novel_name}\n')
-def produce_chunk_to_speech(chunk_path, ref_wav_path):
-    directory_path = os.path.dirname(chunk_path)
-    file_name_with_extension = os.path.basename(chunk_path)
-    # 使用os.path.splitext去除文件扩展名，留下 'chunk_1'
-    file_name = os.path.splitext(file_name_with_extension)[0]
-    output_path = os.path.join(directory_path, file_name)
-    if os.path.exists(output_path+"/speech.wav"):
-        print("speech.wav already exists.")
-        return output_path
-    chunk_to_speech(chunk_path, ref_wav_path, output_path, max_iter=600)
-    return output_path
 def count_chapters_and_chunks(directory):
     chapters = os.listdir(directory)
     total_chapter = len(chapters)
@@ -86,6 +76,13 @@ def save_progress(progress, offset_file):
 def load_progress(offset_file):
     with open(offset_file, 'r', encoding='utf-8') as f:
         return json.load(f)
+
+def text2video(text, curr_work_dir):
+    asure_text2speech(text, curr_work_dir)
+    speech2subtitle(curr_work_dir)
+    subtitle2video(work_dir=curr_work_dir, video_shots_num=10)
+    merge_video_audio_subtitle(f"{curr_work_dir}/concat.mp4", curr_work_dir + "/speech.wav",
+                               curr_work_dir + "/total.srt", curr_work_dir + "/video.mp4")
 
 def producer(queue, offset_path):
     logger = get_logger("Producer")
@@ -139,15 +136,13 @@ def debug_consume(curr_work_dir):
     subprocess.run( ['python', 'D:/PyProj/optimus/social_auto_upload_main/upload_video_to_douyin.py', '--video-dir', curr_work_dir],check=True)
     logging.info(f'Consumed {curr_work_dir}')
     # data_queue.task_done()
-if __name__ == '__main__':
-
-
+def run_pipeline():
     q = Queue()
 
     # debug_work_dir='D:\\temp_medias\\binglinchengxia\\兵临城下\\chapter_0\\chunk_0'
 
-    producer_process = Process(target=producer, args=(q,produce_offset_file))
-    consumer_process = Process(target=consumer, args=(q,consume_offset_file))
+    producer_process = Process(target=producer, args=(q, produce_offset_file))
+    consumer_process = Process(target=consumer, args=(q, consume_offset_file))
 
     producer_process.start()
     consumer_process.start()
@@ -155,3 +150,18 @@ if __name__ == '__main__':
     producer_process.join()
     q.put(None)  # 使用 None 来通知消费者结束
     consumer_process.join()
+
+
+
+if __name__ == '__main__':
+    file_path="/Users/yinke/PycharmProjects/optimus/srzy/srzy-1.txt"
+    work_dir = file_path.split(".")[0]
+    with open(file_path, "r" , encoding="utf-8") as f:
+        text = f.read()
+    split_texts = split_text(text, 1000)
+
+    for idx, text in enumerate(split_texts):
+        work_dir = f"{file_path.split('.')[0]}/{idx}"
+        os.makedirs(work_dir, exist_ok=True)
+        text2video(text, curr_work_dir=work_dir)
+

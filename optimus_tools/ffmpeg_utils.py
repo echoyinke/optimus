@@ -15,15 +15,38 @@ def win_dir_cvt(dir):
 
 def get_media_duration(file_path):
     """使用 ffmpeg-python 获取多媒体文件的时长，返回秒为单位的浮点数。"""
-    try:
         # 使用 ffprobe 获取文件信息
-        probe = ffmpeg.probe(file_path)
-        # 从视频文件的第一个流中提取时长
-        duration = next((stream['duration'] for stream in probe['streams'] if 'duration' in stream), None)
-        return float(duration) if duration is not None else None
-    except ffmpeg.Error as e:
-        print("Failed to retrieve media duration:", e)
-        return None
+    probe = ffmpeg.probe(file_path)
+    # 从视频文件的第一个流中提取时长
+    duration = next((stream['duration'] for stream in probe['streams'] if 'duration' in stream), None)
+    return float(duration)
+
+
+def change_video_speed(input_file, output_file, speed_factor):
+    """
+    调整视频播放速度并同步音频。
+
+    :param input_file: 输入视频文件路径
+    :param output_file: 输出视频文件路径
+    :param speed_factor: 速度因子，大于1表示加速，小于1表示减速
+    """
+    video_filter = f"setpts={1 / speed_factor}*PTS"
+    audio_filter = f"atempo={speed_factor}"
+
+    if speed_factor < 0.5 or speed_factor > 2.0:
+        raise ValueError("音频过滤器atempo的值必须在0.5到2.0之间。")
+
+    command = [
+        'ffmpeg',
+        '-i', input_file,
+        '-filter_complex', f"[0:v]{video_filter}[v];[0:a]{audio_filter}[a]",
+        '-map', "[v]",
+        '-map', "[a]",
+        output_file
+    ]
+
+    subprocess.run(command, check=True)
+    print(f"输出文件已保存到: {output_file}")
 
 
 def merge_video_audio_subtitle(video_path, audio_path, subtitle_path, output_path):
