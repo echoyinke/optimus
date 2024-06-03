@@ -23,13 +23,14 @@ os.chdir(project_abs_path)
 
 from optimus_tools.log_utils import get_logger
 from pathlib import Path
-from optimus_tools.ffmpeg_utils import merge_video_audio_subtitle, make_cover
+from optimus_tools.ffmpeg_utils import merge_video_audio_subtitle, make_cover, change_video_speed
 from optimus_tools.text2image_utils import subtitle2video
 from optimus_tools.chunk_to_speech import chunk_to_speech as asure_chunk_to_speech, text_to_speech as asure_text2speech
 import subprocess
 from optimus_tools.text_utils import split_text
 import re
 import random
+logger = get_logger(__name__)
 
 
 
@@ -78,11 +79,15 @@ def load_progress(offset_file):
         return json.load(f)
 
 def text2video(text, curr_work_dir):
+    if os.path.exists(f"{curr_work_dir}/video.mp4"):
+        logger.info("video.mp4 already exists.")
+        return
     asure_text2speech(text, curr_work_dir)
     speech2subtitle(curr_work_dir)
     subtitle2video(work_dir=curr_work_dir, video_shots_num=10)
     merge_video_audio_subtitle(f"{curr_work_dir}/concat.mp4", curr_work_dir + "/speech.wav",
                                curr_work_dir + "/total.srt", curr_work_dir + "/video.mp4")
+    change_video_speed(f"{curr_work_dir}/video.mp4", f"{curr_work_dir}/video_1.25x.mp4", 1.25)
 
 def producer(queue, offset_path):
     logger = get_logger("Producer")
@@ -154,11 +159,11 @@ def run_pipeline():
 
 
 if __name__ == '__main__':
-    file_path="/Users/yinke/PycharmProjects/optimus/srzy/srzy-1.txt"
+    file_path="D:/temp_medias/shirizhongyan/srzy2.txt"
     work_dir = file_path.split(".")[0]
     with open(file_path, "r" , encoding="utf-8") as f:
         text = f.read()
-    split_texts = split_text(text, 1000)
+    split_texts = split_text(text, 800)
 
     for idx, text in enumerate(split_texts):
         work_dir = f"{file_path.split('.')[0]}/{idx}"

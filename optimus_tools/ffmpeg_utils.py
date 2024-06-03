@@ -48,6 +48,30 @@ def change_video_speed(input_file, output_file, speed_factor):
     subprocess.run(command, check=True)
     print(f"输出文件已保存到: {output_file}")
 
+def change_video_speed(input_file, output_file, speed_factor):
+    """
+    Adjust the playback speed of a video using ffmpeg.
+
+    Args:
+        input_file (str): Path to the input video file.
+        output_file (str): Path to save the output video file.
+        speed_factor (float): Speed factor. >1 for fast, <1 for slow.
+    """
+    if speed_factor > 2.0 or speed_factor < 0.5:
+        raise ValueError("Speed factor should be between 0.5 and 2.0 for audio processing.")
+
+    video_speed = 1 / speed_factor
+    audio_speed = speed_factor
+
+    command = [
+        'ffmpeg',
+        '-i', input_file,
+        '-filter:v', f'setpts={video_speed}*PTS',
+        '-filter:a', f'atempo={audio_speed}',
+        output_file
+    ]
+    subprocess.run(command, check=True)
+    print(f"Video speed change {speed_factor} and saved as {output_file}")
 
 def merge_video_audio_subtitle(video_path, audio_path, subtitle_path, output_path):
     if os.path.exists(output_path):
@@ -142,6 +166,7 @@ def concat_images_to_video(images_with_duration_list, work_dir):
     :param special_effect: 特效，目前支持"zoompan left_up"和"zoompan center"
     """
     if os.path.exists(f'{work_dir}/concat.mp4'):
+        logger.info(f"{work_dir}/concat.mp4 already exists.")
         return
     # 根据每一个image和duration生成视频
     tmp_output_video_path_list = []
@@ -174,10 +199,13 @@ def concat_images_to_video(images_with_duration_list, work_dir):
                 special_effect,
                 tmp_output_video_path  # 输出视频路径
             ]
+        if not os.path.exists(tmp_output_video_path):
+            print(f"Running FFmpeg command: {command}")
+            subprocess.run(command, check=True)
+            print("Video processing completed successfully!")
+        else:
+            logger.info(f"{tmp_output_video_path} already exists.")
 
-        print(f"Running FFmpeg command: {command}")
-        subprocess.run(command, check=True)
-        print("Video processing completed successfully!")
         tmp_output_video_path_list.append(tmp_output_video_path)
 
     # 合并视频， 必须要先将所有需要合并的视频路径写入到一个txt文件中，再合并

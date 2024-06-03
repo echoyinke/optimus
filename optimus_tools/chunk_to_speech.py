@@ -7,11 +7,19 @@ import math
 import wave
 import contextlib
 from .microsoft_azure_api import AzureTextToSpeech
+from optimus_tools.log_utils import get_logger
+logger = get_logger(__name__)
 subscription_key = "dc00d3aa5b204db4a4ffbba9b96560d3"
 azure_tts = AzureTextToSpeech(subscription_key)
 
 
-def text_to_speech(text, save_dir, tts_fun=azure_tts.tts, **kwargs):
+def text_to_speech(text, save_dir, **kwargs):
+    if os.path.exists(f"{save_dir}/speech.wav"):
+        logger.info("speech.wav already exists.")
+        return
+    subscription_key = "dc00d3aa5b204db4a4ffbba9b96560d3"
+    azure_tts = AzureTextToSpeech(subscription_key)
+    tts_fun = azure_tts.tts
     os.makedirs(save_dir, exist_ok=True)
     start_time = time.time()
     # text to speech

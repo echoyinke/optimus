@@ -28,7 +28,9 @@ def subtile_to_video_shots(sentence_path, video_shots_num, save_dir):
             merged_data.append(current_segment)
             current_segment = {'text': '', 'start': item["end"], 'end': None, 'duration': 0}
     # 检查最后一个段落的长度, 如果太短就合并
-    if current_segment['duration'] > 0 and current_segment['duration'] < segment_duration // 1.5 and merged_data:
+    if current_segment['duration'] == 0:
+        pass
+    elif current_segment['duration'] > 0 and current_segment['duration'] < segment_duration // 1.5 and merged_data:
         # 合并到倒数个segment中
         merged_data[-2]['text'] += current_segment['text']
         merged_data[-1]['end'] = current_segment['end']
