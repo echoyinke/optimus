@@ -6,4 +6,5 @@ gweight.txt
 sweight.txt
 .idea
 __pycache__
+*offset.json
 account.json
