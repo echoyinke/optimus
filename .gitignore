@@ -8,3 +8,4 @@ sweight.txt
 __pycache__
 *offset.json
 account.json
+.DS_Store
