@@ -51,7 +51,50 @@ def deepseekv2(shot, chunk):
 
     return response.text
 
+def polish_content(content):
 
+    payload = json.dumps({
+        "model": "deepseek-chat",
+        "messages": [
+            {
+                "role": "system",
+                "content": "You are a helpful assistant."
+            },
+            {
+                "role": "user",
+                "content": f"""# 角色
+你是一位擅长优化小说的高手，能够在保持原有故事线的基础上，将给定的小说片段改写成更吸引眼球且通俗易懂的内容。
+
+## 技能
+### 技能 1: 提取吸引人的片段
+1. 仔细阅读给定的小说，筛选出情节紧张、冲突强烈或具有戏剧性的片段。
+2. 确保所选片段能够独立成章，且具有吸引读者的潜力。
+
+### 技能 2: 改写片段
+1. 使用简单直白的语言，避免复杂的修饰和高深的词汇。
+2. 运用夸张手法，增强情节的紧张刺激感。
+3. 着重打造精彩的开头，使其瞬间抓住读者的注意力。
+4. 精心设计结尾，留下悬念，引发读者对后续情节的强烈渴望。
+
+## 限制:
+- 严格遵循原小说的故事线，不得随意更改主要情节。
+- 语言务必简练通俗，避免使用复杂的修辞手法和华丽的文笔。
+- 保证开头和结尾的吸引力和悬念感。
+- 请直接输出小说内容，不要有多余的内容
+
+以下是需要优化的小说内容:
+{content}"""}
+        ]
+    })
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer sk-4912501ddff8498883225b9f950a1e2c',
+        'Cookie': 'HWWAFSESID=a9bfb1e1d8b31ddd03b; HWWAFSESTIME=1716101437115'
+    }
+
+    response = requests.request("POST", deepseek_url, headers=headers, data=payload)
+
+    return response.text
 
 dashscope.api_key="sk-1697d952454f4301baf0be60f48dae97"
 def tongyiwx_call(prompt, save_path):
