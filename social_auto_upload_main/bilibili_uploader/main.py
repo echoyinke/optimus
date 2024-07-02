@@ -66,6 +66,8 @@ class BilibiliUploader(object):
             bili.access_token = self.cookie_data.get('access_token')
             video_part = bili.upload_file(str(self.file), lines=self.lines,
                                           tasks=self.upload_thread_num)  # 上传视频，默认线路AUTO自动选择，线程数量3。
+            cover_file_path = str(self.file).replace(".mp4",".jpg")
+            self.data.cover = bili.cover_up(cover_file_path).replace('http:', '')
             video_part['title'] = self.title
             self.data.append(video_part)
             ret = bili.submit()  # 提交视频
