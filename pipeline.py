@@ -165,8 +165,10 @@ if __name__ == '__main__':
         text = f.read()
     split_texts = split_text(text, 800)
 
-    for idx, text in enumerate(split_texts):
-        work_dir = f"{file_path.split('.')[0]}/{idx}"
-        os.makedirs(work_dir, exist_ok=True)
-        text2video(text, curr_work_dir=work_dir)
+    # for idx, text in enumerate(split_texts):
+    idx=0
+    text=split_texts[0]
+    work_dir = f"{file_path.split('.')[0]}/{idx}"
+    os.makedirs(work_dir, exist_ok=True)
+    text2video(text, curr_work_dir=work_dir)
 
