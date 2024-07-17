@@ -159,7 +159,7 @@ def run_pipeline():
 
 
 if __name__ == '__main__':
-    file_path="D:/temp_medias/shirizhongyan/srzy2.txt"
+    file_path= "debug/test_text.txt"
     work_dir = file_path.split(".")[0]
     with open(file_path, "r" , encoding="utf-8") as f:
         text = f.read()
