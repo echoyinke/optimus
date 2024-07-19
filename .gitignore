@@ -9,3 +9,5 @@ __pycache__
 *offset.json
 account.json
 .DS_Store
+.vscode/
+debug/
