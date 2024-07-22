@@ -1,5 +1,7 @@
 import json
 import os.path
+from fuzzywuzzy import process
+import pandas as pd
 
 from optimus_tools.ffmpeg_utils import  concat_images_to_video
 from optimus_tools.http_utils import deepseekv2, tongyiwx_call
@@ -46,6 +48,38 @@ def subtitle2video(work_dir, video_shots_num):
     video_shot_info_path = f"{work_dir}/video_shots_info.json"
     video_shots_info=llm_augment_and_gen_image(video_shot_info_path, work_dir)
     concat_images_to_video(images_with_duration_list=video_shots_info, work_dir=work_dir)
+
+def calculate_image_duration(curr_work_dir, shot_info):
+    """
+    把字幕文件（sentences）计算出每个镜头的持续时间
+    """
+
+    with open(curr_work_dir+"/sentences", 'r') as file:
+        file_content = file.read()
+    file_content = file_content.replace("'", '"')
+    sentences = json.loads(file_content)
+    # 设置开头为0
+    sentences[0]['start']=0
+    for sentence in sentences:
+        sentence['duration'] = sentence['end'] - sentence['start']
+    # Calculate the duration for each shot using fuzzy matching
+    for shot in shot_info:
+        shot_num = int(shot['shot_num'])
+        shot_text = shot['original_text']
+        matched_sentences = [s for s in sentences if process.extractOne(shot_text, [s['text']], score_cutoff=70)]
+
+        if matched_sentences:
+            start_time = min(s['start'] for s in matched_sentences)
+            end_time = max(s['end'] for s in matched_sentences)
+            duration = end_time - start_time
+            shot['start'] = start_time
+            shot['end'] = end_time
+            shot['duration'] = duration
+        else:
+            raise Exception(f'No match found for shot: {shot_text}')
+    # Save the updated shot_info back to a file
+    with open(curr_work_dir+'/shot_info.json', 'w', encoding='utf-8') as f:
+        json.dump(shot_info, f, ensure_ascii=False, indent=4)
 
 def llm_augment_and_gen_image(video_shots_info_path, work_dir):
     with open(video_shots_info_path, 'r', encoding='utf-8') as f:

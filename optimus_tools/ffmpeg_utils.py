@@ -174,7 +174,7 @@ def concat_images_to_video(images_with_duration_list, work_dir):
         image_path = image_with_duration["image_path"]
         duration = image_with_duration["duration"]
         duration = float(duration)/1000
-        tmp_output_video_path = image_path.replace(".jpg", ".mp4")
+        tmp_output_video_path = image_path.replace(".png", ".mp4")
 
         fps = 25
         zoom_factor = 0.5
