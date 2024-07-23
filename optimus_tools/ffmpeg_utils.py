@@ -176,16 +176,16 @@ def concat_images_to_video(images_with_duration_list, work_dir):
         duration = float(duration)/1000
         tmp_output_video_path = image_path.replace(".png", ".mp4")
 
-        fps = 25
-        zoom_factor = 0.5
+        fps = 100
+        # zoom_factor代表每秒放大的比例
+        zoom_factor = 0.015
         special_effect = {
-            # 缩放, z代表每一帧的缩放比例（这里代表总共放缩到原来的1.2倍）, s代表输出视频的宽高, fps代表每秒帧数, d代表总共的帧数
-            "zoompan_left_up": f"zoompan=z='zoom+{zoom_factor / (fps * duration)}':s=1000x600:fps={fps}:d={fps}*{duration}",
-            "zoompan_left_down": f"zoompan=x='0':y='ih*(1-1/zoom)':z='zoom+{zoom_factor / (fps * duration)}':fps={fps}:d={fps}*{duration}:s=1000x600",
-            "zoompan_right_up": f"zoompan=x='iw*(1-1/zoom)':y='0':z='zoom+{zoom_factor / (fps * duration)}':fps={fps}:d={fps}*{duration}:s=1000x600",
-            "zoompan_right_down": f"zoompan=x='iw*(1-1/zoom)':y='ih*(1-1/zoom)':z='zoom+{zoom_factor / (fps * duration)}':fps={fps}:d={fps}*{duration}:s=1000x600",
-            "zoompan_center": f"zoompan=x='iw/2*(1-1/zoom)':y='ih/2*(1-1/zoom)':z='zoom+{zoom_factor / (fps * duration)}':fps={fps}:d={fps}*{duration}:s=1000x600",
-
+            # 缩放, z代表每一帧的缩放比例, s代表输出视频的宽高, fps代表每秒帧数, d代表总共的帧数
+            "zoompan_left_up": f"zoompan=z='zoom+{zoom_factor / fps}':s=1000x600:fps={fps}:d={fps}*{duration}",
+            "zoompan_left_down": f"zoompan=x='0':y='ih*(1-1/zoom)':z='zoom+{zoom_factor / fps}':fps={fps}:d={fps}*{duration}:s=1000x600",
+            "zoompan_right_up": f"zoompan=x='iw*(1-1/zoom)':y='0':z='zoom+{zoom_factor / fps}':fps={fps}:d={fps}*{duration}:s=1000x600",
+            "zoompan_right_down": f"zoompan=x='iw*(1-1/zoom)':y='ih*(1-1/zoom)':z='zoom+{zoom_factor / fps}':fps={fps}:d={fps}*{duration}:s=1000x600",
+            "zoompan_center": f"zoompan=x='iw/2*(1-1/zoom)':y='ih/2*(1-1/zoom)':z='zoom+{zoom_factor / fps}':fps={fps}:d={fps}*{duration}:s=1000x600",
         }
         # 原始不缩放
         # random select a value from special_effect
