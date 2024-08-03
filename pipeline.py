@@ -22,6 +22,7 @@ from funclip_main.funclip.videoclipper import main as funclip_main
 os.chdir(project_abs_path)
 
 from optimus_tools.log_utils import get_logger
+from optimus_tools.coze_api import text2images_by_coze
 from pathlib import Path
 from optimus_tools.ffmpeg_utils import merge_video_audio_subtitle, make_cover, change_video_speed
 from optimus_tools.text2image_utils import subtitle2video, calculate_image_duration, concat_images_to_video
@@ -115,7 +116,8 @@ def producer(queue, offset_path):
             progress['produced']['curr_chunk'] = chunk
             save_progress(progress, offset_path)
 
-def produce_coze(curr_work_dir):
+def img2vid_from_coze_outputs(curr_work_dir):
+    curr_work_dir = os.path.abspath(curr_work_dir)
     with open(curr_work_dir+"/shot_info.json", 'r', encoding='utf-8') as file:
         shot_info = json.load(file)
     shot_info = sorted(shot_info, key=lambda x: int(x['shot_num']))
@@ -127,7 +129,6 @@ def produce_coze(curr_work_dir):
     calculate_image_duration(curr_work_dir, shot_info)
     with open(curr_work_dir+"/shot_info.json", 'r', encoding='utf-8') as file:
         shot_info = json.load(file)
-    curr_work_dir="/Users/yinke/PycharmProjects/optimus/debug"
     concat_images_to_video(shot_info, curr_work_dir)
     merge_video_audio_subtitle(f"{curr_work_dir}/concat.mp4", curr_work_dir + "/speech.wav",
                                curr_work_dir + "/total.srt", curr_work_dir + "/video.mp4")
@@ -179,16 +180,7 @@ def run_pipeline():
 
 
 if __name__ == '__main__':
-    # file_path= "debug/test_text.txt"
-    # work_dir = file_path.split(".")[0]
-    # with open(file_path, "r" , encoding="utf-8") as f:
-    #     text = f.read()
-    # split_texts = split_text(text, 800)
-    #
-    # # for idx, text in enumerate(split_texts):
-    # idx=0
-    # text=split_texts[0]
-    # work_dir = f"{file_path.split('.')[0]}/{idx}"
-    # os.makedirs(work_dir, exist_ok=True)
-    # text2video(text, curr_work_dir=work_dir)
-    produce_coze("./debug")
+    work_dir = "./debug"
+    input_text = "叶芷白,让车给创死了。\n被神明变成了银发紫瞳的冰山美少女,超有钱的小富婆。\n上辈子穷困潦倒,为晚饭吃几根葱发愁的叶芷白,人生突然好起来了!\n——除了变成女生这一点!\n但万幸...有一张难以接近的冰山面容，想必她们也不敢...\n“嘿嘿...芷白，你笑起来真好看～”\n“小白，昨天说好的亲亲，还没兑现呐。”\n“姐姐，请和她们保持一定距离！"
+    text2images_by_coze(input_text, work_dir)
+    img2vid_from_coze_outputs(work_dir)

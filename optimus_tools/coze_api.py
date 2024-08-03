@@ -2,9 +2,10 @@
 
 import requests
 import json
+import uuid
+import os
 
-
-def get_bot_response(text, basedir): 
+def text2images_by_coze(text, basedir):
     """
     向聊天机器人发送查询并处理其响应。
 
@@ -16,7 +17,7 @@ def get_bot_response(text, basedir):
     url = "https://api.coze.cn/open_api/v2/chat"
 
     payload = json.dumps({
-    "conversation_id": "123",
+    "conversation_id": str(uuid.uuid4()),
     "bot_id": "7392129560491933708",
     "user": "29032212312301862555",
     "query": text,
@@ -34,7 +35,7 @@ def get_bot_response(text, basedir):
 
     
     # 将应答保存到base_dir中
-    with open(basedir + "/" + "orig.json", "w",encoding='utf-8') as f:
+    with open(basedir + "/" + "orig_coze_response.json", "w",encoding='utf-8') as f:
         f.write(response.text)
     
     # 尝试使用 json.dump 解析应答中的内容，如果无法解析则返回None
@@ -65,16 +66,18 @@ def get_bot_response(text, basedir):
     return json.dumps(output, ensure_ascii=False)
 
 def download_image(answer, basedir):
+    basedir = os.path.abspath(basedir)
     for shot in answer["output"]:
         image_url = shot["image_url"]
-        image_path = basedir + "/" + image_url.split("/")[-1]
+        shot_num = shot['shot_num']
+        image_path = f"{basedir}/shot_{shot_num}.png"
         response = requests.get(image_url)
         # 下载图片并将图片保存到 image_path 的文件中
         with open(image_path, "wb") as f:
             f.write(response.content)
 
         # 将image_path添加到原来应答的json中
-        shot["image_path"] = image_url.split("/")[-1]
+        shot["image_path"] = image_path
 
     return answer["output"]
     
@@ -82,7 +85,7 @@ def download_image(answer, basedir):
 if __name__ == "__main__":
     text = "叶芷白,让车给创死了。\n被神明变成了银发紫瞳的冰山美少女,超有钱的小富婆。\n上辈子穷困潦倒,为晚饭吃几根葱发愁的叶芷白,人生突然好起来了!\n——除了变成女生这一点!\n但万幸...有一张难以接近的冰山面容，想必她们也不敢...\n“嘿嘿...芷白，你笑起来真好看～”\n“小白，昨天说好的亲亲，还没兑现呐。”\n“姐姐，请和她们保持一定距离！"
     basedir = "../debug"
-    response_json = get_bot_response(text, basedir)
+    response_json = text2images_by_coze(text, basedir)
     print(response_json)
 
     # with open(basedir + "/" + "orig.json", "r") as f:
