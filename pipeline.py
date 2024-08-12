@@ -127,9 +127,7 @@ def img2vid_from_coze_outputs(curr_work_dir):
     asure_text2speech(total_original_text, curr_work_dir)
     speech2subtitle(curr_work_dir)
     calculate_image_duration(curr_work_dir, shot_info)
-    with open(curr_work_dir+"/shot_info.json", 'r', encoding='utf-8') as file:
-        shot_info = json.load(file)
-    concat_images_to_video(shot_info, curr_work_dir)
+    concat_images_to_video(curr_work_dir)
     merge_video_audio_subtitle(f"{curr_work_dir}/concat.mp4", curr_work_dir + "/speech.wav",
                                curr_work_dir + "/total.srt", curr_work_dir + "/video.mp4")
 
@@ -181,6 +179,7 @@ def run_pipeline():
 
 if __name__ == '__main__':
     work_dir = "./debug"
-    input_text = "叶芷白,让车给创死了。\n被神明变成了银发紫瞳的冰山美少女,超有钱的小富婆。\n上辈子穷困潦倒,为晚饭吃几根葱发愁的叶芷白,人生突然好起来了!\n——除了变成女生这一点!\n但万幸...有一张难以接近的冰山面容，想必她们也不敢...\n“嘿嘿...芷白，你笑起来真好看～”\n“小白，昨天说好的亲亲，还没兑现呐。”\n“姐姐，请和她们保持一定距离！"
-    text2images_by_coze(input_text, work_dir)
-    img2vid_from_coze_outputs(work_dir)
+    input_text = "距离行刑还有两个小时，我走进监舍，给那名死刑犯做临刑前的心理疏导。死刑犯说：「马上我就要被枪毙了，一切都将尘埃落定，这样的结局可真没意思。但我还想再挣扎一下一一怎样才能扭转这种无聊的结局呢？」「不如给你讲个故事吧，陆医生？」他意味不明的笑容令我不寒而栗。最后两小时，难道他还想翻案不成？2005年大学毕业后，我被分配到西南山区一所男子监狱的教改科，成为了一名心理辅导老师。日常工作就是给服刑人员进行心理教育，帮助他们矫治不良心理，以便更好地参与改造。"
+    os.makedirs(os.path.abspath(work_dir), exist_ok=True)
+    text2images_by_coze(input_text, os.path.abspath(work_dir))
+    img2vid_from_coze_outputs(os.path.abspath(work_dir))
