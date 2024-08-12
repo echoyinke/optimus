@@ -171,6 +171,25 @@ def concat_images_to_video(work_dir, shot_info=None):
     if shot_info is None:
         with open(work_dir + "/shot_info.json", 'r', encoding='utf-8') as file:
             shot_info = json.load(file)
+    def precheck_shot_info(shot_info):
+        for i, shot in enumerate(shot_info):
+            if not shot['image_path']:  # 如果 image_path 为空
+                # 优先使用前一个 shot_num 的 image_path
+                if i > 0 and shot_info[i - 1]['image_path']:
+                    logger.info(
+                        f"Image path for shot {shot['shot_num']} is empty. Using image path from shot {shot_info[i - 1]['shot_num']}.")
+                    shot['image_path'] = shot_info[i - 1]['image_path']
+                # 如果前一个 shot_num 的 image_path 为空，则使用下一个
+                elif i < len(shot_info) - 1 and shot_info[i + 1]['image_path']:
+                    logger.info(
+                        f"Image path for shot {shot['shot_num']} is empty. Using image path from shot {shot_info[i + 1]['shot_num']}.")
+                    shot['image_path'] = shot_info[i + 1]['image_path']
+                else:
+                    logger.warning(
+                        f"Image path for shot {shot['shot_num']} could not be filled from neighboring shots.")
+
+        return shot_info
+    precheck_shot_info(shot_info)
     # 根据每一个image和duration生成视频
     tmp_output_video_path_list = []
     for image_with_duration in shot_info:
