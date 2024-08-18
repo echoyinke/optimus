@@ -35,11 +35,11 @@ logger = get_logger(__name__)
 
 
 
-produce_offset_file = 'D:\PyProj\optimus\produce_offset.json'
-consume_offset_file = 'D:\PyProj\optimus\consume_offset.json'
-ref_wav_path = 'D:/PyProj/optimus/GPT_SoVITS_main/ref_wav/我和竹马醉酒后疯狂一夜，我本以为我十年的喜欢终于有了结果，谁知醒后，竹马只是淡淡递给我一粒药。.wav'
-jieya_video_folder="D:/temp_medias/jieya_video/"
-cover_path="D:/temp_medias/binglinchengxia/cover.jpg"
+produce_offset_file = './produce_offset.json'
+consume_offset_file = './consume_offset.json'
+ref_wav_path = './GPT_SoVITS_main/ref_wav/我和竹马醉酒后疯狂一夜，我本以为我十年的喜欢终于有了结果，谁知醒后，竹马只是淡淡递给我一粒药。.wav'
+jieya_video_folder="./jieya_video/"
+cover_path="./cover.jpg"
 
 def get_jieya_video(folder_path):
     if not os.path.isdir(folder_path):
@@ -181,6 +181,6 @@ def run_pipeline():
 
 if __name__ == '__main__':
     work_dir = "./debug"
-    input_text = "叶芷白,让车给创死了。\n被神明变成了银发紫瞳的冰山美少女,超有钱的小富婆。\n上辈子穷困潦倒,为晚饭吃几根葱发愁的叶芷白,人生突然好起来了!\n——除了变成女生这一点!\n但万幸...有一张难以接近的冰山面容，想必她们也不敢...\n“嘿嘿...芷白，你笑起来真好看～”\n“小白，昨天说好的亲亲，还没兑现呐。”\n“姐姐，请和她们保持一定距离！"
+    input_text = "想知道生存的意义吗？想真正的……活着吗？yes/no”电脑上突然跳出了这么个提示的话，相信很多人都会吓一跳吧？如果有看过Z大神写过的《无限恐怖》的话，也许会怀着纠结的心情选择yes或者放弃地选择no吧？\n而此时坐在电脑前的少年却一反常态，阴险地笑了起来，“嘿嘿嘿嘿，不知道会有多少人点yes呢？真是十分期待呢~~”随手点在了yes上面。\n“嘭”地一声，电脑屏幕完全变黑了……"
     text2images_by_coze(input_text, work_dir)
     img2vid_from_coze_outputs(work_dir)

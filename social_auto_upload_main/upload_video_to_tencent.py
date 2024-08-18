@@ -21,7 +21,7 @@ if not logger.handlers:
     logger.propagate = False
 
 parser = argparse.ArgumentParser("upload_video_to_douyin")
-parser.add_argument('--video-dir', default="/Users/wangzehao/Downloads/optimus/social_auto_upload_main/videos", type=str,
+parser.add_argument('--video-dir', default="/Users/wangzehao/project/optimus/social_auto_upload_main/videos", type=str,
                     help='video dir to upload')
 
 
