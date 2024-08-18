@@ -49,8 +49,11 @@ def text2images_by_coze(text, basedir):
 
     for message in response_json["messages"]:
         if message["role"] == "assistant" and message["type"] == "answer":
-            answer = json.loads(message["content"])
-
+            try:
+                answer = json.loads(message["content"])
+            except json.decoder.JSONDecodeError as e:
+                print(f"Error decoding JSON from content {message['content']}")
+                raise e
     # 如果answer为空，则返回None
     if not answer:
         print("invalid response")

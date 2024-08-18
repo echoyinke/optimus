@@ -127,9 +127,7 @@ def img2vid_from_coze_outputs(curr_work_dir):
     asure_text2speech(total_original_text, curr_work_dir)
     speech2subtitle(curr_work_dir)
     calculate_image_duration(curr_work_dir, shot_info)
-    with open(curr_work_dir+"/shot_info.json", 'r', encoding='utf-8') as file:
-        shot_info = json.load(file)
-    concat_images_to_video(shot_info, curr_work_dir)
+    concat_images_to_video(curr_work_dir)
     merge_video_audio_subtitle(f"{curr_work_dir}/concat.mp4", curr_work_dir + "/speech.wav",
                                curr_work_dir + "/total.srt", curr_work_dir + "/video.mp4")
 
@@ -181,6 +179,7 @@ def run_pipeline():
 
 if __name__ == '__main__':
     work_dir = "./debug"
-    input_text = "想知道生存的意义吗？想真正的……活着吗？yes/no”电脑上突然跳出了这么个提示的话，相信很多人都会吓一跳吧？如果有看过Z大神写过的《无限恐怖》的话，也许会怀着纠结的心情选择yes或者放弃地选择no吧？\n而此时坐在电脑前的少年却一反常态，阴险地笑了起来，“嘿嘿嘿嘿，不知道会有多少人点yes呢？真是十分期待呢~~”随手点在了yes上面。\n“嘭”地一声，电脑屏幕完全变黑了……"
-    text2images_by_coze(input_text, work_dir)
-    img2vid_from_coze_outputs(work_dir)
+    input_text = "距离行刑还有两个小时，我走进监舍，给那名死刑犯做临刑前的心理疏导。死刑犯说：「马上我就要被枪毙了，一切都将尘埃落定，这样的结局可真没意思。但我还想再挣扎一下一一怎样才能扭转这种无聊的结局呢？」「不如给你讲个故事吧，陆医生？」他意味不明的笑容令我不寒而栗。最后两小时，难道他还想翻案不成？2005年大学毕业后，我被分配到西南山区一所男子监狱的教改科，成为了一名心理辅导老师。日常工作就是给服刑人员进行心理教育，帮助他们矫治不良心理，以便更好地参与改造。"
+    os.makedirs(os.path.abspath(work_dir), exist_ok=True)
+    text2images_by_coze(input_text, os.path.abspath(work_dir))
+    img2vid_from_coze_outputs(os.path.abspath(work_dir))

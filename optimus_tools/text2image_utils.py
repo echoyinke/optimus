@@ -51,34 +51,39 @@ def subtitle2video(work_dir, video_shots_num):
 
 def calculate_image_duration(curr_work_dir, shot_info):
     """
-    把字幕文件（sentences）计算出每个镜头的持续时间
+    计算字幕文件（sentences）中每个镜头的持续时间并更新 shot_info。
     """
 
-    with open(curr_work_dir+"/sentences", 'r') as file:
-        file_content = file.read()
-    file_content = file_content.replace("'", '"')
-    sentences = json.loads(file_content)
-    # 设置开头为0
-    sentences[0]['start']=0
+    # 读取并解析 sentences 文件
+    with open(f"{curr_work_dir}/sentences", 'r') as file:
+        file_content = file.read().replace("'", '"')  # 将内容读入字符串并替换单引号为双引号
+        sentences = json.loads(file_content)
+
+    # 初始化每个句子的持续时间
+    sentences[0]['start'] = 0
     for sentence in sentences:
         sentence['duration'] = sentence['end'] - sentence['start']
-    # Calculate the duration for each shot using fuzzy matching
+
+    previous_end_time = 0  # 存储上一个shot的end_time
+    # 使用模糊匹配计算每个镜头的持续时间
     for shot in shot_info:
-        shot_num = int(shot['shot_num'])
         shot_text = shot['original_text']
-        matched_sentences = [s for s in sentences if process.extractOne(shot_text, [s['text']], score_cutoff=70)]
+        matched_sentences = [
+            s for s in sentences
+            if s['text'].strip() in shot_text or  process.extractOne(shot_text, [s['text']], score_cutoff=70)
+        ]
 
         if matched_sentences:
-            start_time = min(s['start'] for s in matched_sentences)
-            end_time = max(s['end'] for s in matched_sentences)
-            duration = end_time - start_time
-            shot['start'] = start_time
-            shot['end'] = end_time
-            shot['duration'] = duration
+            shot['start'] = previous_end_time
+            shot['end'] = matched_sentences[-1]['end']
+            shot['duration'] = shot['end'] - shot['start']
+            shot['sentences'] =[s['text'] +" "+str(s['end']) for s in matched_sentences]
+            previous_end_time = shot['end']  # 更新previous_end_time
         else:
-            raise Exception(f'No match found for shot: {shot_text}')
-    # Save the updated shot_info back to a file
-    with open(curr_work_dir+'/shot_info.json', 'w', encoding='utf-8') as f:
+            raise Exception(f"No match found for shot: {shot_text}")
+
+    # 保存更新后的 shot_info
+    with open(f"{curr_work_dir}/shot_info.json", 'w', encoding='utf-8') as f:
         json.dump(shot_info, f, ensure_ascii=False, indent=4)
 
 def llm_augment_and_gen_image(video_shots_info_path, work_dir):

@@ -152,10 +152,10 @@ def add_cover(cover_path, video_path, output_path):
         print("Failed to process video:", e)
 
 
-def concat_images_to_video(images_with_duration_list, work_dir):
+def concat_images_to_video(work_dir, shot_info=None):
     """
-    将images_with_duration_list中的每一个image和duration生成视频，并将所有视频合并成一个视频
-    :param images_with_duration_list:
+    将shot_info中的每一个image和duration生成视频，并将所有视频合并成一个视频
+    :param shot_info需要包含:
       [{"image_path" : "./images/1.jpg", "duration" : 5400},
        {"image_path" : "/Users/AI图片素材/images/2.jpg", "duration" : 210},
        {"image_path" : "./images/3.jpg", "duration" : 4200}]
@@ -168,9 +168,31 @@ def concat_images_to_video(images_with_duration_list, work_dir):
     if os.path.exists(f'{work_dir}/concat.mp4'):
         logger.info(f"{work_dir}/concat.mp4 already exists.")
         return
+    if shot_info is None:
+        with open(work_dir + "/shot_info.json", 'r', encoding='utf-8') as file:
+            shot_info = json.load(file)
+    def precheck_shot_info(shot_info):
+        for i, shot in enumerate(shot_info):
+            if not shot['image_path']:  # 如果 image_path 为空
+                # 优先使用前一个 shot_num 的 image_path
+                if i > 0 and shot_info[i - 1]['image_path']:
+                    logger.info(
+                        f"Image path for shot {shot['shot_num']} is empty. Using image path from shot {shot_info[i - 1]['shot_num']}.")
+                    shot['image_path'] = shot_info[i - 1]['image_path']
+                # 如果前一个 shot_num 的 image_path 为空，则使用下一个
+                elif i < len(shot_info) - 1 and shot_info[i + 1]['image_path']:
+                    logger.info(
+                        f"Image path for shot {shot['shot_num']} is empty. Using image path from shot {shot_info[i + 1]['shot_num']}.")
+                    shot['image_path'] = shot_info[i + 1]['image_path']
+                else:
+                    logger.warning(
+                        f"Image path for shot {shot['shot_num']} could not be filled from neighboring shots.")
+
+        return shot_info
+    precheck_shot_info(shot_info)
     # 根据每一个image和duration生成视频
     tmp_output_video_path_list = []
-    for image_with_duration in images_with_duration_list:
+    for image_with_duration in shot_info:
         image_path = image_with_duration["image_path"]
         duration = image_with_duration["duration"]
         duration = float(duration)/1000
