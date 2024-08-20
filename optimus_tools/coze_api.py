@@ -4,6 +4,8 @@ import requests
 import json
 import uuid
 import os
+from .log_utils import get_logger
+logger = get_logger("coze_api")
 
 def text2images_by_coze(text, basedir):
     """
@@ -30,7 +32,7 @@ def text2images_by_coze(text, basedir):
     'Host': 'api.coze.cn',
     'Connection': 'keep-alive'
     }
-
+    logger.info("Sending request to coze...")
     response = requests.request("POST", url, headers=headers, data=payload)
 
     
@@ -39,24 +41,19 @@ def text2images_by_coze(text, basedir):
         f.write(response.text)
     
     # 尝试使用 json.dump 解析应答中的内容，如果无法解析则返回None
-    try:
-        response_json = json.loads(response.text)
-    except json.JSONDecodeError:
-        print('Response is not JSON')
-        print(response.text)
-        return None
-
+    response_json = json.loads(response.text)
+    logger.info(f"Got response from coze: {response.text}")
 
     for message in response_json["messages"]:
         if message["role"] == "assistant" and message["type"] == "answer":
             try:
                 answer = json.loads(message["content"])
             except json.decoder.JSONDecodeError as e:
-                print(f"Error decoding JSON from content {message['content']}")
+                logger.info(f"Error decoding JSON from content {message['content']}")
                 raise e
     # 如果answer为空，则返回None
     if not answer:
-        print("invalid response")
+        logger.info("invalid response")
         return None
     
     output = download_image(answer, basedir)
@@ -89,9 +86,9 @@ if __name__ == "__main__":
     text = "叶芷白,让车给创死了。\n被神明变成了银发紫瞳的冰山美少女,超有钱的小富婆。\n上辈子穷困潦倒,为晚饭吃几根葱发愁的叶芷白,人生突然好起来了!\n——除了变成女生这一点!\n但万幸...有一张难以接近的冰山面容，想必她们也不敢...\n“嘿嘿...芷白，你笑起来真好看～”\n“小白，昨天说好的亲亲，还没兑现呐。”\n“姐姐，请和她们保持一定距离！"
     basedir = "../debug"
     response_json = text2images_by_coze(text, basedir)
-    print(response_json)
+    logger.info(response_json)
 
     # with open(basedir + "/" + "orig.json", "r") as f:
     #     response_json = json.loads(f.read())
     # response_json =  download_image(response_json, basedir)
-    # print(json.dumps(response_json, ensure_ascii=False))
+    # logger.info(json.dumps(response_json, ensure_ascii=False))

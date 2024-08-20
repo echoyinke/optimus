@@ -7,7 +7,7 @@ import json
 logger = get_logger(__name__)
 import ffmpeg
 import random
-
+import requests
 
 def win_dir_cvt(dir):
     return dir.replace("\\", '/')
@@ -22,33 +22,7 @@ def get_media_duration(file_path):
     return float(duration)
 
 
-def change_video_speed(input_file, output_file, speed_factor):
-    """
-    调整视频播放速度并同步音频。
-
-    :param input_file: 输入视频文件路径
-    :param output_file: 输出视频文件路径
-    :param speed_factor: 速度因子，大于1表示加速，小于1表示减速
-    """
-    video_filter = f"setpts={1 / speed_factor}*PTS"
-    audio_filter = f"atempo={speed_factor}"
-
-    if speed_factor < 0.5 or speed_factor > 2.0:
-        raise ValueError("音频过滤器atempo的值必须在0.5到2.0之间。")
-
-    command = [
-        'ffmpeg',
-        '-i', input_file,
-        '-filter_complex', f"[0:v]{video_filter}[v];[0:a]{audio_filter}[a]",
-        '-map', "[v]",
-        '-map', "[a]",
-        output_file
-    ]
-
-    subprocess.run(command, check=True)
-    print(f"输出文件已保存到: {output_file}")
-
-def change_video_speed(input_file, output_file, speed_factor):
+def change_video_speed(workdir, speed_factor=1.25):
     """
     Adjust the playback speed of a video using ffmpeg.
 
@@ -57,23 +31,30 @@ def change_video_speed(input_file, output_file, speed_factor):
         output_file (str): Path to save the output video file.
         speed_factor (float): Speed factor. >1 for fast, <1 for slow.
     """
+    input_file = workdir + "/video.mp4"
+    output_file = workdir + "/video_1.25x.mp4"
     if speed_factor > 2.0 or speed_factor < 0.5:
         raise ValueError("Speed factor should be between 0.5 and 2.0 for audio processing.")
 
     video_speed = 1 / speed_factor
     audio_speed = speed_factor
 
-    command = [
+    change_speed_command = [
         'ffmpeg',
+        '-loglevel', 'error',  # 只输出错误信息
+        '-y',
         '-i', input_file,
         '-filter:v', f'setpts={video_speed}*PTS',
         '-filter:a', f'atempo={audio_speed}',
         output_file
     ]
-    subprocess.run(command, check=True)
-    print(f"Video speed change {speed_factor} and saved as {output_file}")
+    logger.info(f"Running command:change_speed_command")
+    subprocess.run(change_speed_command, check=True)
+    logger.info(f"Video speed change {speed_factor}")
+    os.remove(input_file)
+    os.rename(output_file, input_file)
 
-def merge_video_audio_subtitle(video_path, audio_path, subtitle_path, output_path):
+def merge_video_audio_subtitle(concat_video, audio_path, subtitle_path, output_path):
     if os.path.exists(output_path):
         logger.info("video.mp4 already exists.")
         return
@@ -81,11 +62,13 @@ def merge_video_audio_subtitle(video_path, audio_path, subtitle_path, output_pat
     if platform.system() == 'Windows':
         subtitle_path = subtitle_path.replace("\\", "/")
         subtitle_path = subtitle_path.replace(":", "\\:")
-        print(f"This is a Windows system. play a path trick ...modify path as : {subtitle_path}")
-    command = [
+        logger.info(f"This is a Windows system. play a path trick ...modify path as : {subtitle_path}")
+    # 直接合并视频/音频/字幕太费内存，容易崩
+    command_merge_video_audio_subtile = [
         'ffmpeg',
+        '-loglevel', 'error',  # 只输出错误信息
         '-y',  # 覆盖
-        '-i', video_path,
+        '-i', concat_video,
         '-i', audio_path,  # 添加音频输入
         '-filter_complex',
         f"[0:v]split=2[v0][v1];[v0][v1]concat=n=2:v=1:a=0,trim=duration={duration}[trimed];[trimed]subtitles=\'{subtitle_path}\':force_style='FontName=Microsoft YaHei,FontSize=24'[video]",
@@ -98,16 +81,70 @@ def merge_video_audio_subtitle(video_path, audio_path, subtitle_path, output_pat
         output_path
     ]
 
-    print(f"Running FFmpeg command: {command}")
-    subprocess.run(command, check=True)
-    print("Video processing completed successfully!")
-    os.remove(video_path)
+
+    logger.info(f"Running FFmpeg command: command_merge_video_audio_subtile")
+    subprocess.run(command_merge_video_audio_subtile, check=True)
+    # logger.info(f"Running FFmpeg command: step2_add_subtitle")
+    # subprocess.run(step2_add_subtitles, check=True)
+    # logger.info("Video processing completed successfully!")
+
+def merge_video_audio(workdir):
+    concat_video=f"{workdir}/concat.mp4"
+    audio_path=f"{workdir}/output.wav"
+    output_path=f"{workdir}/video.mp4"
+    if os.path.exists(output_path):
+        logger.info("video.mp4 already exists.")
+        return
+    command_merge_video_audio = [
+        'ffmpeg',
+        '-loglevel', 'error',  # 只输出错误信息
+        '-y',  # 覆盖
+        '-i', concat_video,  # 视频输入
+        '-i', audio_path,  # 音频输入
+        '-c:v', 'libx264',  # 编码视频
+        '-c:a', 'aac',  # 编码音频
+        '-crf', '23',  # 压缩质量
+        '-preset', 'fast',  # 编码速度
+        output_path  # 中间输出文件路径
+    ]
+
+    logger.info(f"Running FFmpeg command: command_merge_video_audio")
+    subprocess.run(command_merge_video_audio, check=True)
+    logger.info(f"finish FFmpeg command: command_merge_video_audio")
+
+
+def add_subtile(workdir):
+    input_path=workdir + "/video.mp4"
+    subtitle_path=workdir + "/output.srt"
+    output_path=workdir + "/video_srt.mp4"
+    if platform.system() == 'Windows':
+        subtitle_path = subtitle_path.replace("\\", "/")
+        subtitle_path = subtitle_path.replace(":", "\\:")
+        logger.info(f"This is a Windows system. play a path trick ...modify path as : {subtitle_path}")
+
+    command_add_subtitles = [
+        'ffmpeg',
+        '-loglevel', 'error',  # 只输出错误信息
+        '-y',  # 覆盖
+        '-i', input_path,  # 合并后的中间文件
+        '-vf', f"subtitles=\'{subtitle_path}\':force_style='FontName=Microsoft YaHei,FontSize=24'",  # 添加字幕
+        '-c:v', 'libx264',  # 编码视频
+        '-crf', '23',  # 压缩质量
+        '-preset', 'fast',  # 编码速度
+        output_path  # 最终输出文件路径
+    ]
+
+    logger.info(f"Running FFmpeg command: command_add_subtitles")
+    subprocess.run(command_add_subtitles, check=True)
+    logger.info(f"finish FFmpeg command: command_add_subtitles")
+    os.remove(input_path)
+    os.rename(output_path, input_path)
 
 
 def make_cover(cover_path, novel_name, chapter, chunk, output_path):
     # if platform.system() == 'Windows':
     #     picture_path=picture_path.replace(":", "\\:")
-    #     print(f"This is a Windows system. play a path trick ...modify path as : {subtitle_path}")
+    #     logger.info(f"This is a Windows system. play a path trick ...modify path as : {subtitle_path}")
     command = [
         'ffmpeg',
         '-y',  # 覆盖
@@ -118,11 +155,11 @@ def make_cover(cover_path, novel_name, chapter, chunk, output_path):
     ]
 
     try:
-        print("Running FFmpeg command...")
+        logger.info("Running FFmpeg command...")
         subprocess.run(command, check=True)
-        print("Video processing completed successfully!")
+        logger.info("Video processing completed successfully!")
     except subprocess.CalledProcessError as e:
-        print("Failed to process video:", e)
+        logger.info("Failed to process video:", e)
 
 
 def add_cover(cover_path, video_path, output_path):
@@ -137,7 +174,7 @@ def add_cover(cover_path, video_path, output_path):
         output_path  # 输出文件路径
 
     ]
-    print(command)
+    logger.info(command)
     # ffmpeg - i
     # D: / temp_medias / jieya_video / chongyaji.mp4 - i
     # D: / temp_medias / binglinchengxia / cover2.jpg - filter_complex
@@ -145,11 +182,36 @@ def add_cover(cover_path, video_path, output_path):
     # output.mp4
 
     try:
-        print("Running FFmpeg command...")
+        logger.info("Running FFmpeg command...")
         subprocess.run(command, check=True)
-        print("Video processing completed successfully!")
+        logger.info("Video processing completed successfully!")
     except subprocess.CalledProcessError as e:
-        print("Failed to process video:", e)
+        logger.info("Failed to process video:", e)
+def maybe_download_images(shot_info, work_dir):
+    os.makedirs(f"{os.path.abspath(work_dir)}/images/", exist_ok=True)
+    do_download=False
+    for shot in shot_info:
+        if 'image_url' in shot and 'image_path' not in shot:
+            image_url = shot["image_url"]
+            shot_num = shot['shot_num']
+            image_path = f"{os.path.abspath(work_dir)}/images/shot_{shot_num}.png"
+            if os.path.exists(image_path):
+                logger.info(f"{image_path} already exists.")
+                shot['image_path']=image_path
+                continue
+            logger.info(f"starting download {image_path}")
+            response = requests.get(image_url)
+            # 下载图片并将图片保存到 image_path 的文件中
+            with open(image_path, "wb") as f:
+                f.write(response.content)
+
+            # 将image_path添加到原来应答的json中
+            shot["image_path"] = image_path
+            do_download=True
+    if do_download:
+        with open(work_dir+"/shot_info.json", 'w') as f:
+            json.dump(shot_info, f, ensure_ascii=False, indent=4)
+    return shot_info
 
 
 def concat_images_to_video(work_dir, shot_info=None):
@@ -160,17 +222,20 @@ def concat_images_to_video(work_dir, shot_info=None):
        {"image_path" : "/Users/AI图片素材/images/2.jpg", "duration" : 210},
        {"image_path" : "./images/3.jpg", "duration" : 4200}]
     - image_path是图片路径（可以是相对路径，也可以是绝对路径）
-    - duration是图片显示时间
+    - duration是图片显示时间，单位毫秒
     
     :param output_path: 合并后的视频路径
     :param special_effect: 特效，目前支持"zoompan left_up"和"zoompan center"
     """
     if os.path.exists(f'{work_dir}/concat.mp4'):
-        logger.info(f"{work_dir}/concat.mp4 already exists.")
+        logger.info(f"concat.mp4 already exists.")
         return
     if shot_info is None:
         with open(work_dir + "/shot_info.json", 'r', encoding='utf-8') as file:
             shot_info = json.load(file)
+
+    shot_info=maybe_download_images(shot_info, work_dir)
+
     def precheck_shot_info(shot_info):
         for i, shot in enumerate(shot_info):
             if not shot['image_path']:  # 如果 image_path 为空
@@ -194,7 +259,7 @@ def concat_images_to_video(work_dir, shot_info=None):
     tmp_output_video_path_list = []
     for image_with_duration in shot_info:
         image_path = image_with_duration["image_path"]
-        duration = image_with_duration["duration"]
+        duration = image_with_duration["duration_ms"]
         duration = float(duration)/1000
         tmp_output_video_path = image_path.replace(".png", ".mp4")
 
@@ -213,8 +278,9 @@ def concat_images_to_video(work_dir, shot_info=None):
         # random select a value from special_effect
 
         special_effect = random.choice(list(special_effect.values()))
-        command = [
+        single_image2vid_command = [
                 'ffmpeg',
+                '-loglevel', 'error',  # 只输出错误信息
                 '-y',
                 '-i', image_path,  # 输入图片路径
                 '-filter_complex',  # 滤镜复合
@@ -222,9 +288,8 @@ def concat_images_to_video(work_dir, shot_info=None):
                 tmp_output_video_path  # 输出视频路径
             ]
         if not os.path.exists(tmp_output_video_path):
-            print(f"Running FFmpeg command: {command}")
-            subprocess.run(command, check=True)
-            print("Video processing completed successfully!")
+            logger.info(f"Running FFmpeg command: single_image2vid_command")
+            subprocess.run(single_image2vid_command, check=True)
         else:
             logger.info(f"{tmp_output_video_path} already exists.")
 
@@ -237,6 +302,7 @@ def concat_images_to_video(work_dir, shot_info=None):
 
     concat_command = [
         'ffmpeg',
+        '-loglevel', 'error',  # 只输出错误信息
         '-y',
         '-f', 'concat',
         '-safe', '0', # 允许文件名中有特殊字符
@@ -245,9 +311,9 @@ def concat_images_to_video(work_dir, shot_info=None):
         f'{work_dir}/concat.mp4'
     ]
 
-    print(f"Running FFmpeg command: {concat_command}")
+    logger.info(f"Running FFmpeg command: concat_command")
     subprocess.run(concat_command, check=True)
-    print("Video concatenation completed successfully!")
+    logger.info("Video concatenation completed successfully!")
     for tmp_output_video_path in tmp_output_video_path_list:
         os.remove(tmp_output_video_path)
 

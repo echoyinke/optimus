@@ -96,9 +96,9 @@ class AzureTextToSpeech:
 
 if __name__ == "__main__":
     app = AzureTextToSpeech(subscription_key)
-    text = "问出这个问题的，是宁无邪。宁无邪很平静，关于第二点，为何有人没有中毒，他已经猜到原因，只是在看到自己的得力下属任随云站起来的时候，他也忍不住自嘲苦笑。“我想知道，你先前所表现的种种，都展现出了你作为沈将军儿子的睿智和态度，如今，江湖帝国本可以和解，你现在的举动，会将这一切毁于一旦你可知道？”言醒面对宁无邪的问题，嘲讽道：“如今荒郊野外，只剩下你们三百人，只要你们死了，又有谁会知道今日所发生的？”“至于你问我为什么，呵，如果是沈小猎的话，他的的确确，会促成江湖与帝国的和解。可我啊，不是沈小猎。”满场皆惊。“若非沈将军的儿子……怎么可能……”说话的是玄生十二，玄生十二如同宁无邪一般，也没有想到自己的大护法徐浮会背叛自己。"
+    text = '早安，九位。山羊头率先说话了，很高兴能在此与你们见面，你们已经在我面前沉睡了十二个小时了。'
     # text = "你好啊"
-    app.tts(text, "output2.wav")
+    app.tts(text, "output3.wav")
     # Get a list of voices https://docs.microsoft.com/en-us/azure/cognitive-services/speech-service/rest-text-to-speech#get-a-list-of-voices
     # 查看节点支持的语言类型
     # app.get_voices_list()
