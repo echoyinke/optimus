@@ -8,3 +8,6 @@ moviepy
 numpy
 gradio
 modelscope
+azure-cognitiveservices-speech
+ffmpeg-python
+fuzzywuzzy

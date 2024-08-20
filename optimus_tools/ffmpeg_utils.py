@@ -110,7 +110,7 @@ def merge_video_audio(workdir):
 
     logger.info(f"Running FFmpeg command: command_merge_video_audio")
     subprocess.run(command_merge_video_audio, check=True)
-    logger.info(f"finish FFmpeg command: command_merge_video_audio")
+    logger.info(f"Finish FFmpeg command: command_merge_video_audio")
 
 
 def add_subtile(workdir):
@@ -136,7 +136,7 @@ def add_subtile(workdir):
 
     logger.info(f"Running FFmpeg command: command_add_subtitles")
     subprocess.run(command_add_subtitles, check=True)
-    logger.info(f"finish FFmpeg command: command_add_subtitles")
+    logger.info(f"Finish FFmpeg command: command_add_subtitles")
     os.remove(input_path)
     os.rename(output_path, input_path)
 
@@ -288,7 +288,7 @@ def concat_images_to_video(work_dir, shot_info=None):
                 tmp_output_video_path  # 输出视频路径
             ]
         if not os.path.exists(tmp_output_video_path):
-            logger.info(f"Running FFmpeg command: single_image2vid_command")
+            logger.info(f"Running FFmpeg command: single_image2vid_command for {image_path}")
             subprocess.run(single_image2vid_command, check=True)
         else:
             logger.info(f"{tmp_output_video_path} already exists.")
