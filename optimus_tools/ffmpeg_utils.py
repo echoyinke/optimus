@@ -82,7 +82,7 @@ def merge_video_audio_subtitle(concat_video, audio_path, subtitle_path, output_p
     ]
 
 
-    logger.info(f"Running FFmpeg command: command_merge_video_audio_subtile")
+    logger.info(f"Running FFmpeg command: command_merge_video_audio_subtile ...")
     subprocess.run(command_merge_video_audio_subtile, check=True)
     # logger.info(f"Running FFmpeg command: step2_add_subtitle")
     # subprocess.run(step2_add_subtitles, check=True)
@@ -108,7 +108,7 @@ def merge_video_audio(workdir):
         output_path  # 中间输出文件路径
     ]
 
-    logger.info(f"Running FFmpeg command: command_merge_video_audio")
+    logger.info(f"Running FFmpeg command: command_merge_video_audio ...")
     subprocess.run(command_merge_video_audio, check=True)
     logger.info(f"Finish FFmpeg command: command_merge_video_audio")
 
@@ -134,7 +134,7 @@ def add_subtile(workdir):
         output_path  # 最终输出文件路径
     ]
 
-    logger.info(f"Running FFmpeg command: command_add_subtitles")
+    logger.info(f"Running FFmpeg command: command_add_subtitles ...")
     subprocess.run(command_add_subtitles, check=True)
     logger.info(f"Finish FFmpeg command: command_add_subtitles")
     os.remove(input_path)
@@ -155,7 +155,7 @@ def make_cover(cover_path, novel_name, chapter, chunk, output_path):
     ]
 
     try:
-        logger.info("Running FFmpeg command...")
+        logger.info("Running FFmpeg command make_cover...")
         subprocess.run(command, check=True)
         logger.info("Video processing completed successfully!")
     except subprocess.CalledProcessError as e:
@@ -182,7 +182,7 @@ def add_cover(cover_path, video_path, output_path):
     # output.mp4
 
     try:
-        logger.info("Running FFmpeg command...")
+        logger.info("Running FFmpeg command add cover ...")
         subprocess.run(command, check=True)
         logger.info("Video processing completed successfully!")
     except subprocess.CalledProcessError as e:
@@ -288,7 +288,7 @@ def concat_images_to_video(work_dir, shot_info=None):
                 tmp_output_video_path  # 输出视频路径
             ]
         if not os.path.exists(tmp_output_video_path):
-            logger.info(f"Running FFmpeg command: single_image2vid_command for {image_path}")
+            logger.info(f"Running FFmpeg command: single_image2vid_command for {image_path} ...")
             subprocess.run(single_image2vid_command, check=True)
         else:
             logger.info(f"{tmp_output_video_path} already exists.")
@@ -311,7 +311,7 @@ def concat_images_to_video(work_dir, shot_info=None):
         f'{work_dir}/concat.mp4'
     ]
 
-    logger.info(f"Running FFmpeg command: concat_command")
+    logger.info(f"Running FFmpeg command: concat_command ...")
     subprocess.run(concat_command, check=True)
     logger.info("Video concatenation completed successfully!")
     for tmp_output_video_path in tmp_output_video_path_list:
