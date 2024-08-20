@@ -3,7 +3,6 @@ pysrt
 python-Levenshtein
 librosa
 soundfile
-funasr>=1.0.19
 moviepy
 numpy
 gradio

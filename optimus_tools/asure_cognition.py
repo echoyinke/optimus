@@ -21,8 +21,7 @@ def text2speech_with_timestamp(workdir):
     # 正则化sentences
     curr_work_dir = os.path.abspath(workdir)
     if os.path.exists(f"{curr_work_dir}/output.wav"):
-        log.info("output.wav already exists.")
-        return
+        raise ValueError("output.wav already exists.")
     with open(curr_work_dir+"/shot_info.json", 'r', encoding='utf-8') as file:
         shot_info = json.load(file)
     shot_info = sorted(shot_info, key=lambda x: int(x['shot_num']))
