@@ -1,7 +1,6 @@
 import json
 import os.path
 from fuzzywuzzy import process
-import pandas as pd
 import re
 
 from optimus_tools.ffmpeg_utils import  concat_images_to_video

@@ -1,6 +1,8 @@
+import os.path
+
 from optimus_tools.log_utils import get_logger
 
-from optimus_tools.ffmpeg_utils import merge_video_audio
+from optimus_tools.ffmpeg_utils import merge_video_audio, add_subtile, change_video_speed
 from optimus_tools.text2image_utils import concat_images_to_video
 from optimus_tools.coze_api import preview_shot_info
 
@@ -20,4 +22,5 @@ def img2vid_from_coze_outputs(curr_work_dir):
 
 
 if __name__ == '__main__':
-    img2vid_from_coze_outputs("your/workdir")
+    abs_path=os.path.abspath("debug")
+    img2vid_from_coze_outputs(abs_path)
