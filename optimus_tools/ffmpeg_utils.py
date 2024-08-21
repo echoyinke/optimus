@@ -93,8 +93,7 @@ def merge_video_audio(workdir):
     audio_path=f"{workdir}/output.wav"
     output_path=f"{workdir}/video.mp4"
     if os.path.exists(output_path):
-        logger.info("video.mp4 already exists.")
-        return
+        raise ValueError("video.mp4 already exists.")
     command_merge_video_audio = [
         'ffmpeg',
         '-loglevel', 'error',  # 只输出错误信息
