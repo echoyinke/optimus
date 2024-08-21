@@ -213,7 +213,7 @@ def maybe_download_images(shot_info, work_dir):
     return shot_info
 
 
-def concat_images_to_video(work_dir, shot_info=None):
+def concat_images_to_video(work_dir, shot_info=None, video_ratio="16:9"):
     """
     将shot_info中的每一个image和duration生成视频，并将所有视频合并成一个视频
     :param shot_info需要包含:
@@ -226,6 +226,13 @@ def concat_images_to_video(work_dir, shot_info=None):
     :param output_path: 合并后的视频路径
     :param special_effect: 特效，目前支持"zoompan left_up"和"zoompan center"
     """
+    if video_ratio == "16:9":
+        video_size = "1920x1080"
+    elif video_ratio == "9:16":
+        video_size = "1080x1920"
+    else:
+        raise ValueError("Unsupported video ratio. Supported ratios are '16:9' and '9:16'.")
+
     if os.path.exists(f'{work_dir}/concat.mp4'):
         logger.info(f"concat.mp4 already exists.")
         return
@@ -267,11 +274,11 @@ def concat_images_to_video(work_dir, shot_info=None):
         zoom_factor = 0.015
         special_effect = {
             # 缩放, z代表每一帧的缩放比例, s代表输出视频的宽高, fps代表每秒帧数, d代表总共的帧数
-            "zoompan_left_up": f"zoompan=z='zoom+{zoom_factor / fps}':s=1000x600:fps={fps}:d={fps}*{duration}",
-            "zoompan_left_down": f"zoompan=x='0':y='ih*(1-1/zoom)':z='zoom+{zoom_factor / fps}':fps={fps}:d={fps}*{duration}:s=1000x600",
-            "zoompan_right_up": f"zoompan=x='iw*(1-1/zoom)':y='0':z='zoom+{zoom_factor / fps}':fps={fps}:d={fps}*{duration}:s=1000x600",
-            "zoompan_right_down": f"zoompan=x='iw*(1-1/zoom)':y='ih*(1-1/zoom)':z='zoom+{zoom_factor / fps}':fps={fps}:d={fps}*{duration}:s=1000x600",
-            "zoompan_center": f"zoompan=x='iw/2*(1-1/zoom)':y='ih/2*(1-1/zoom)':z='zoom+{zoom_factor / fps}':fps={fps}:d={fps}*{duration}:s=1000x600",
+            "zoompan_left_up": f"zoompan=z='zoom+{zoom_factor / fps}':s={video_size}:fps={fps}:d={fps}*{duration}",
+            "zoompan_left_down": f"zoompan=x='0':y='ih*(1-1/zoom)':z='zoom+{zoom_factor / fps}':fps={fps}:d={fps}*{duration}:s={video_size}",
+            "zoompan_right_up": f"zoompan=x='iw*(1-1/zoom)':y='0':z='zoom+{zoom_factor / fps}':fps={fps}:d={fps}*{duration}:s={video_size}",
+            "zoompan_right_down": f"zoompan=x='iw*(1-1/zoom)':y='ih*(1-1/zoom)':z='zoom+{zoom_factor / fps}':fps={fps}:d={fps}*{duration}:s={video_size}",
+            "zoompan_center": f"zoompan=x='iw/2*(1-1/zoom)':y='ih/2*(1-1/zoom)':z='zoom+{zoom_factor / fps}':fps={fps}:d={fps}*{duration}:s={video_size}",
         }
         # 原始不缩放
         # random select a value from special_effect
