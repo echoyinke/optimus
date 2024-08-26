@@ -1,7 +1,7 @@
 import json
 import os.path
 from fuzzywuzzy import process
-import pandas as pd
+import re
 
 from optimus_tools.ffmpeg_utils import  concat_images_to_video
 from optimus_tools.http_utils import deepseekv2, tongyiwx_call
@@ -68,9 +68,11 @@ def calculate_image_duration(curr_work_dir, shot_info):
     # 使用模糊匹配计算每个镜头的持续时间
     for shot in shot_info:
         shot_text = shot['original_text']
+        # 使用正则表达式替换所有非字母数字和非空白字符，去除符号，因为字幕里没有符号
+        shot_text = re.sub(r'[^\w\s]', '', shot_text)
         matched_sentences = [
             s for s in sentences
-            if s['text'].strip() in shot_text or  process.extractOne(shot_text, [s['text']], score_cutoff=70)
+            if s['text'].strip() in shot_text or shot_text in s['text'].strip() or  process.extractOne(shot_text, [s['text']], score_cutoff=70)
         ]
 
         if matched_sentences:

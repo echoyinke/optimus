@@ -9,11 +9,8 @@ import requests
 import json
 deepseek_url = "https://api.deepseek.com/chat/completions"
 from http import HTTPStatus
-from urllib.parse import urlparse, unquote
-from pathlib import PurePosixPath
 import requests
 import dashscope
-import yaml
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(levelname)s: %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S')

@@ -179,7 +179,7 @@ def run_pipeline():
 
 if __name__ == '__main__':
     work_dir = "./debug"
-    input_text = "距离行刑还有两个小时，我走进监舍，给那名死刑犯做临刑前的心理疏导。死刑犯说：「马上我就要被枪毙了，一切都将尘埃落定，这样的结局可真没意思。但我还想再挣扎一下一一怎样才能扭转这种无聊的结局呢？」「不如给你讲个故事吧，陆医生？」他意味不明的笑容令我不寒而栗。最后两小时，难道他还想翻案不成？2005年大学毕业后，我被分配到西南山区一所男子监狱的教改科，成为了一名心理辅导老师。日常工作就是给服刑人员进行心理教育，帮助他们矫治不良心理，以便更好地参与改造。"
+    input_text =''''''
     os.makedirs(os.path.abspath(work_dir), exist_ok=True)
-    text2images_by_coze(input_text, os.path.abspath(work_dir))
+    # text2images_by_coze(input_text, os.path.abspath(work_dir))
     img2vid_from_coze_outputs(os.path.abspath(work_dir))
