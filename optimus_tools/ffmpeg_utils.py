@@ -99,7 +99,7 @@ def merge_video_audio(workdir):
         raise ValueError("video.mp4 already exists.")
     command_merge_video_audio = [
         'ffmpeg',
-        '-loglevel', 'error',  # 只输出错误信息
+        '-loglevel', 'info',  # 只输出错误信息
         '-y',  # 覆盖
         '-i', concat_video,  # 视频输入
         '-i', audio_path,  # 音频输入
@@ -250,25 +250,6 @@ def concat_images_to_video(work_dir, shot_info=None, video_ratio="16:9"):
 
     shot_info=maybe_download_images(shot_info, work_dir)
 
-    def precheck_shot_info(shot_info):
-        for i, shot in enumerate(shot_info):
-            if not shot['image_path']:  # 如果 image_path 为空
-                # 优先使用前一个 shot_num 的 image_path
-                if i > 0 and shot_info[i - 1]['image_path']:
-                    logger.info(
-                        f"Image path for shot {shot['shot_num']} is empty. Using image path from shot {shot_info[i - 1]['shot_num']}.")
-                    shot['image_path'] = shot_info[i - 1]['image_path']
-                # 如果前一个 shot_num 的 image_path 为空，则使用下一个
-                elif i < len(shot_info) - 1 and shot_info[i + 1]['image_path']:
-                    logger.info(
-                        f"Image path for shot {shot['shot_num']} is empty. Using image path from shot {shot_info[i + 1]['shot_num']}.")
-                    shot['image_path'] = shot_info[i + 1]['image_path']
-                else:
-                    logger.warning(
-                        f"Image path for shot {shot['shot_num']} could not be filled from neighboring shots.")
-
-        return shot_info
-    precheck_shot_info(shot_info)
     # 根据每一个image和duration生成视频
     tmp_output_video_path_list = []
     for image_with_duration in shot_info:
