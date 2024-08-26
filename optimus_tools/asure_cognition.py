@@ -4,6 +4,7 @@ import re
 from .log_utils import get_logger
 import os
 import datetime
+from .coze_utils import load_shot_info
 
 log=get_logger("asure_cognition")
 
@@ -22,9 +23,7 @@ def text2speech_with_timestamp(workdir):
     curr_work_dir = os.path.abspath(workdir)
     if os.path.exists(f"{curr_work_dir}/output.wav"):
         raise ValueError("output.wav already exists.")
-    with open(curr_work_dir+"/shot_info.json", 'r', encoding='utf-8') as file:
-        shot_info = json.load(file)
-    shot_info = sorted(shot_info, key=lambda x: int(x['shot_num']))
+    shot_info=load_shot_info(curr_work_dir)
 
     def normalize_text(text):
 

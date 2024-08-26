@@ -2,12 +2,15 @@ import random
 import subprocess
 import platform
 import os
+import time
+
 from optimus_tools.log_utils import get_logger
 import json
 logger = get_logger(__name__)
 import ffmpeg
 import random
 import requests
+from .coze_utils import load_shot_info, download_images
 
 def win_dir_cvt(dir):
     return dir.replace("\\", '/')
@@ -187,19 +190,25 @@ def add_cover(cover_path, video_path, output_path):
     except subprocess.CalledProcessError as e:
         logger.info("Failed to process video:", e)
 def maybe_download_images(shot_info, work_dir):
-    os.makedirs(f"{os.path.abspath(work_dir)}/images/", exist_ok=True)
+    os.makedirs(f"{os.path.abspath(work_dir)}/media/images/", exist_ok=True)
     do_download=False
     for shot in shot_info:
         if 'image_url' in shot and 'image_path' not in shot:
             image_url = shot["image_url"]
             shot_num = shot['shot_num']
-            image_path = f"{os.path.abspath(work_dir)}/images/shot_{shot_num}.png"
+            image_path = f"{os.path.abspath(work_dir)}/media/images/shot_{shot_num}.png"
             if os.path.exists(image_path):
                 logger.info(f"{image_path} already exists.")
                 shot['image_path']=image_path
                 continue
             logger.info(f"starting download {image_path}")
-            response = requests.get(image_url)
+            try:
+                response = requests.get(image_url)
+                time.sleep(2)
+            except Exception as e:
+                print(e)
+                time.sleep(2)
+
             # 下载图片并将图片保存到 image_path 的文件中
             with open(image_path, "wb") as f:
                 f.write(response.content)
@@ -237,8 +246,7 @@ def concat_images_to_video(work_dir, shot_info=None, video_ratio="16:9"):
         logger.info(f"concat.mp4 already exists.")
         return
     if shot_info is None:
-        with open(work_dir + "/shot_info.json", 'r', encoding='utf-8') as file:
-            shot_info = json.load(file)
+        shot_info=load_shot_info(work_dir)
 
     shot_info=maybe_download_images(shot_info, work_dir)
 

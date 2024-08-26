@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import time
 
 import requests
 import json
@@ -82,6 +83,54 @@ def download_image(answer, basedir):
         shot["image_path"] = image_path
 
     return answer["output"]
+
+def load_shot_info(workdir, shot_info=None):
+    if shot_info==None:
+        with open(workdir + "/shot_info.json", 'r', encoding='utf-8') as file:
+            shot_info = json.load(file)
+            if 'output' in shot_info:
+                shot_info=shot_info['output']
+    shot_info = sorted(shot_info, key=lambda x: int(x['shot_num']))
+    return shot_info
+def download_images(workdir,shot_info=None):
+    # 创建保存图片和音频的文件夹
+    shot_info=load_shot_info(workdir)
+    image_folder=f"{workdir}/media/images"
+    os.makedirs(image_folder, exist_ok=True)
+
+    # 定义文件下载函数
+    def download_file(url, file_name):
+        response = requests.get(url)
+        with open(file_name, 'wb') as file:
+            file.write(response.content)
+
+    # 遍历数据列表并下载文件
+    for item in shot_info:
+        # 下载图片并保存到 image_folder
+        image_file_name = os.path.join(image_folder, f"{item['shot_num']}_image.jpg")
+        if not os.path.exists(image_file_name):
+            download_file(item['image_url'], image_file_name)
+            logger.info(f"images download to {image_file_name}")
+            time.sleep(1)
+def download_audios(workdir, shot_info=None):
+    shot_info = load_shot_info(workdir)
+    # 创建保存图片和音频的文件夹
+    audio_folder=f"{workdir}/media/audios"
+    os.makedirs(audio_folder, exist_ok=True)
+
+    # 定义文件下载函数
+    def download_file(url, file_name):
+        response = requests.get(url)
+        with open(file_name, 'wb') as file:
+            file.write(response.content)
+
+    # 遍历数据列表并下载文件
+    for item in shot_info:
+        audio_file_name = os.path.join(audio_folder, f"{item['shot_num']}_audio.mp3")
+        if not os.path.exists(audio_file_name):
+            time.sleep(1)
+            download_file(item['audio_url'], audio_file_name)
+            print(f"音频已下载并命名为 {audio_file_name}")
 
 
 def workflow_api():
