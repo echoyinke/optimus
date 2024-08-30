@@ -6,11 +6,13 @@ import time
 
 from optimus_tools.log_utils import get_logger
 import json
+
 logger = get_logger(__name__)
 import ffmpeg
 import random
 import requests
 from .coze_utils import load_shot_info, download_images
+
 
 def win_dir_cvt(dir):
     return dir.replace("\\", '/')
@@ -18,7 +20,7 @@ def win_dir_cvt(dir):
 
 def get_media_duration(file_path):
     """使用 ffmpeg-python 获取多媒体文件的时长，返回秒为单位的浮点数。"""
-        # 使用 ffprobe 获取文件信息
+    # 使用 ffprobe 获取文件信息
     probe = ffmpeg.probe(file_path)
     # 从视频文件的第一个流中提取时长
     duration = next((stream['duration'] for stream in probe['streams'] if 'duration' in stream), None)
@@ -57,6 +59,7 @@ def change_video_speed(workdir, speed_factor=1.25):
     os.remove(input_file)
     os.rename(output_file, input_file)
 
+
 def merge_video_audio_subtitle(concat_video, audio_path, subtitle_path, output_path):
     if os.path.exists(output_path):
         logger.info("video.mp4 already exists.")
@@ -84,17 +87,17 @@ def merge_video_audio_subtitle(concat_video, audio_path, subtitle_path, output_p
         output_path
     ]
 
-
     logger.info(f"Running FFmpeg command: command_merge_video_audio_subtile ...")
     subprocess.run(command_merge_video_audio_subtile, check=True)
     # logger.info(f"Running FFmpeg command: step2_add_subtitle")
     # subprocess.run(step2_add_subtitles, check=True)
     # logger.info("Video processing completed successfully!")
 
+
 def merge_video_audio(workdir):
-    concat_video=f"{workdir}/concat.mp4"
-    audio_path=f"{workdir}/output.wav"
-    output_path=f"{workdir}/video.mp4"
+    concat_video = f"{workdir}/concat.mp4"
+    audio_path = f"{workdir}/output.wav"
+    output_path = f"{workdir}/video.mp4"
     if os.path.exists(output_path):
         raise ValueError("video.mp4 already exists.")
     command_merge_video_audio = [
@@ -116,9 +119,9 @@ def merge_video_audio(workdir):
 
 
 def add_subtile(workdir):
-    input_path=workdir + "/video.mp4"
-    subtitle_path=workdir + "/output.srt"
-    output_path=workdir + "/video_srt.mp4"
+    input_path = workdir + "/video.mp4"
+    subtitle_path = workdir + "/output.srt"
+    output_path = workdir + "/video_srt.mp4"
     if platform.system() == 'Windows':
         subtitle_path = subtitle_path.replace("\\", "/")
         subtitle_path = subtitle_path.replace(":", "\\:")
@@ -189,9 +192,11 @@ def add_cover(cover_path, video_path, output_path):
         logger.info("Video processing completed successfully!")
     except subprocess.CalledProcessError as e:
         logger.info("Failed to process video:", e)
+
+
 def maybe_download_images(shot_info, work_dir):
     os.makedirs(f"{os.path.abspath(work_dir)}/media/images/", exist_ok=True)
-    do_download=False
+    do_download = False
     for shot in shot_info:
         if 'image_url' in shot and 'image_path' not in shot:
             image_url = shot["image_url"]
@@ -199,7 +204,7 @@ def maybe_download_images(shot_info, work_dir):
             image_path = f"{os.path.abspath(work_dir)}/media/images/shot_{shot_num}.png"
             if os.path.exists(image_path):
                 logger.info(f"{image_path} already exists.")
-                shot['image_path']=image_path
+                shot['image_path'] = image_path
                 continue
             logger.info(f"starting download {image_path}")
             try:
@@ -215,11 +220,88 @@ def maybe_download_images(shot_info, work_dir):
 
             # 将image_path添加到原来应答的json中
             shot["image_path"] = image_path
-            do_download=True
+            do_download = True
     if do_download:
-        with open(work_dir+"/shot_info.json", 'w') as f:
+        with open(work_dir + "/shot_info.json", 'w') as f:
             json.dump(shot_info, f, ensure_ascii=False, indent=4)
     return shot_info
+
+
+def direct_concat_videos(work_dir, video_path_list):
+    # 合并视频， 必须要先将所有需要合并的视频路径写入到一个txt文件中，再合并
+    with open(f"{work_dir}/contact_videos.txt", "w", encoding='utf-8') as f:
+        for video in video_path_list:
+            f.write(f"file '{video}'\n")
+
+    concat_command = [
+        'ffmpeg',
+        '-loglevel', 'error',  # 只输出错误信息
+        '-y',
+        '-f', 'concat',
+        '-safe', '0',  # 允许文件名中有特殊字符
+        '-i', f'{work_dir}/contact_videos.txt',  # 输入的合并文件
+        '-c', 'copy',
+        f'{work_dir}/concat.mp4'
+    ]
+
+    logger.info(f"Running FFmpeg command: concat_command ...")
+    subprocess.run(concat_command, check=True)
+    logger.info("Video concatenation completed successfully!")
+
+
+def concat_videos_with_fade_transitions(work_dir, videos_path_list_with_time, transition_duration=1):
+    concat_command = ['ffmpeg',
+                      '-loglevel', 'error',  # 只输出错误信息
+                      '-y']
+
+    # 添加输入文件和滤波器复杂度选项
+    filter_complex = []
+    for idx, (video_path, start_time_ms, duration_time_ms) in enumerate(videos_path_list_with_time):
+        concat_command.extend(['-i', video_path])
+
+        duration_time_s = duration_time_ms / 1000
+        start_time_pts = f"PTS-STARTPTS+{start_time_ms / 1000:.3f}/TB"
+
+        # 第一个视频不需要淡入效果
+        if idx == 0:
+            filter_str = (
+                f'[{idx}:v]format=pix_fmts=yuva420p,fade=t=out:st={duration_time_s}:d={transition_duration}:alpha=1,setpts=PTS-STARTPTS[va{idx}];'
+            )
+        # 最后一个视频不需要淡出效果
+        elif idx == len(videos_path_list_with_time) - 1:
+            filter_str = (
+                f'[{idx}:v]format=pix_fmts=yuva420p,fade=t=in:st=0:d={transition_duration}:alpha=1,setpts={start_time_pts}[va{idx}];'
+            )
+        else:
+            # 构建滤波器复杂度字符串
+            filter_str = (
+                f'[{idx}:v]format=pix_fmts=yuva420p,fade=t=in:st=0:d={transition_duration}:alpha=1,fade=t=out:st={duration_time_s}:d={transition_duration}:alpha=1,setpts={start_time_pts}[va{idx}];'
+            )
+        filter_complex.append(filter_str)
+
+    # 拼接overlay操作
+    overlay_commands = []
+    for i in range(len(videos_path_list_with_time) - 1):
+        if i == 0:
+            overlay_str = f'[va{i}][va{i + 1}]overlay=format=yuv420[ov{i + 1}];'
+        elif i == len(videos_path_list_with_time) - 2:
+            overlay_str = f'[ov{i}][va{i + 1}]overlay=format=yuv420[outv]'
+        else:
+            overlay_str = f'[ov{i}][va{i + 1}]overlay=format=yuv420[ov{i + 1}];'
+        overlay_commands.append(overlay_str)
+
+    filter_complex.extend(overlay_commands)
+
+    # 添加其余参数
+    concat_command.extend([
+        '-filter_complex', "".join(filter_complex),
+        '-map', '[outv]',
+        f'{work_dir}/concat.mp4'
+    ])
+
+    logger.info(f"Running FFmpeg command: concat_command ...")
+    subprocess.run(concat_command, check=True)
+    logger.info("Video concatenation completed successfully!")
 
 
 def concat_images_to_video(work_dir, shot_info=None, video_ratio="16:9"):
@@ -231,7 +313,7 @@ def concat_images_to_video(work_dir, shot_info=None, video_ratio="16:9"):
        {"image_path" : "./images/3.jpg", "duration" : 4200}]
     - image_path是图片路径（可以是相对路径，也可以是绝对路径）
     - duration是图片显示时间，单位毫秒
-    
+
     :param output_path: 合并后的视频路径
     :param special_effect: 特效，目前支持"zoompan left_up"和"zoompan center"
     """
@@ -246,16 +328,17 @@ def concat_images_to_video(work_dir, shot_info=None, video_ratio="16:9"):
         logger.info(f"concat.mp4 already exists.")
         return
     if shot_info is None:
-        shot_info=load_shot_info(work_dir)
+        shot_info = load_shot_info(work_dir)
 
-    shot_info=maybe_download_images(shot_info, work_dir)
+    shot_info = maybe_download_images(shot_info, work_dir)
 
     # 根据每一个image和duration生成视频
     tmp_output_video_path_list = []
+    tmp_output_video_path_list_with_time = []
     for image_with_duration in shot_info:
         image_path = image_with_duration["image_path"]
         duration = image_with_duration["duration_ms"]
-        duration = float(duration)/1000
+        duration = float(duration) / 1000
         tmp_output_video_path = image_path.replace(".png", ".mp4")
 
         fps = 100
@@ -268,20 +351,24 @@ def concat_images_to_video(work_dir, shot_info=None, video_ratio="16:9"):
             "zoompan_right_up": f"zoompan=x='iw*(1-1/zoom)':y='0':z='zoom+{zoom_factor / fps}':fps={fps}:d={fps}*{duration}:s={video_size}",
             "zoompan_right_down": f"zoompan=x='iw*(1-1/zoom)':y='ih*(1-1/zoom)':z='zoom+{zoom_factor / fps}':fps={fps}:d={fps}*{duration}:s={video_size}",
             "zoompan_center": f"zoompan=x='iw/2*(1-1/zoom)':y='ih/2*(1-1/zoom)':z='zoom+{zoom_factor / fps}':fps={fps}:d={fps}*{duration}:s={video_size}",
+            "zoompan_left_to_right": f"zoompan='1.2':x='if(lte(on,-1),(iw-iw/zoom)/2,x+0.1)':y='if(lte(on,1),(ih-ih/zoom)/2,y)':fps={fps}:d={fps}*{duration}:s={video_size}",
+            "zoompan_right_to_left": f"zoompan='1.2':x='if(lte(on,1),(iw/zoom)/2,x-0.1)':y='if(lte(on,1),(ih-ih/zoom)/2,y)':fps={fps}:d={fps}*{duration}:s={video_size}",
+            "zoompan_up_to_down": f"zoompan='1.2':x='if(lte(on,1),(iw-iw/zoom)/2,x)':y='if(lte(on,-1),(ih-ih/zoom)/2,y+0.05)':fps={fps}:d={fps}*{duration}:s={video_size}",
+            "zoompan_down_to_up": f"zoompan='1.2':x='if(lte(on,1),(iw-iw/zoom)/2,x)':y='if(lte(on,1),(ih/zoom)/2,y-0.05)':fps={fps}:d={fps}*{duration}:s={video_size}",
         }
         # 原始不缩放
         # random select a value from special_effect
 
         special_effect = random.choice(list(special_effect.values()))
         single_image2vid_command = [
-                'ffmpeg',
-                '-loglevel', 'error',  # 只输出错误信息
-                '-y',
-                '-i', image_path,  # 输入图片路径
-                '-filter_complex',  # 滤镜复合
-                special_effect,
-                tmp_output_video_path  # 输出视频路径
-            ]
+            'ffmpeg',
+            '-loglevel', 'error',  # 只输出错误信息
+            '-y',
+            '-i', image_path,  # 输入图片路径
+            '-filter_complex',  # 滤镜复合
+            special_effect,
+            tmp_output_video_path  # 输出视频路径
+        ]
         if not os.path.exists(tmp_output_video_path):
             logger.info(f"Running FFmpeg command: single_image2vid_command for {image_path} ...")
             subprocess.run(single_image2vid_command, check=True)
@@ -289,28 +376,15 @@ def concat_images_to_video(work_dir, shot_info=None, video_ratio="16:9"):
             logger.info(f"{tmp_output_video_path} already exists.")
 
         tmp_output_video_path_list.append(tmp_output_video_path)
+        tmp_output_video_path_list_with_time.append(
+            (tmp_output_video_path, image_with_duration["start_time_ms"], image_with_duration["duration_ms"]))
 
-    # 合并视频， 必须要先将所有需要合并的视频路径写入到一个txt文件中，再合并
-    with open(f"{work_dir}/contact_videos.txt", "w", encoding='utf-8') as f:
-        for tmp_output_video_path in tmp_output_video_path_list:
-            f.write(f"file '{tmp_output_video_path}'\n")
+    # 合并所有视频
+    concat_videos_with_fade_transitions(work_dir, tmp_output_video_path_list_with_time)
 
-    concat_command = [
-        'ffmpeg',
-        '-loglevel', 'error',  # 只输出错误信息
-        '-y',
-        '-f', 'concat',
-        '-safe', '0', # 允许文件名中有特殊字符
-        '-i', f'{work_dir}/contact_videos.txt', # 输入的合并文件
-        '-c', 'copy',
-        f'{work_dir}/concat.mp4'
-    ]
-
-    logger.info(f"Running FFmpeg command: concat_command ...")
-    subprocess.run(concat_command, check=True)
-    logger.info("Video concatenation completed successfully!")
     for tmp_output_video_path in tmp_output_video_path_list:
         os.remove(tmp_output_video_path)
+
 
 if __name__ == '__main__':
     # video_path =  'D:/temp_medias/jieya_video/chongyaji.mp4'
