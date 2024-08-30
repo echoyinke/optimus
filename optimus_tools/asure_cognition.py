@@ -27,6 +27,9 @@ def text2speech_with_timestamp(workdir):
 
     def normalize_text(text):
 
+        # 替换连续的句号、叹号、问号为一个
+        text = re.sub(r'([。？！?!])\1+', r'\1', text)
+
         # 去除不可见的零宽字符和空格
         text = re.sub(r'\s+', ' ', text)  # 将多个空格替换为一个空格
 
