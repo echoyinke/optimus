@@ -147,4 +147,4 @@ if __name__ == '__main__':
     # shot_info=text2speech_and_subtile("/Users/yinke/PycharmProjects/optimus/debug")
     # print(shot_info)
 
-    gen_subtile("/Users/yinke/PycharmProjects/optimus/debug")
+    gen_subtile("./debug")

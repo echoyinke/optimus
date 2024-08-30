@@ -118,12 +118,12 @@ def llm_augment_and_gen_image(video_shots_info_path, work_dir):
 
 if __name__ == '__main__':
 
-    sentence_path = "D:/temp_medias/binglinchengxia\兵临城下\chapter_0\chunk_57/sentences"
-    shots_path = "/Users/yinke/PycharmProjects/optimus/optimus_tools/outputs/split_shots.json"
-    aug_shots = "/Users/yinke/PycharmProjects/optimus/optimus_tools/outputs/aug_split_shots.json"
+    sentence_path = "./debug"
+    shots_path = "./optimus_tools/outputs/split_shots.json"
+    aug_shots = "./optimus_tools/outputs/aug_split_shots.json"
     # subtile_to_video_shots(sentence_path, 5,  "D:/temp_medias/binglinchengxia\兵临城下\chapter_0")
-    info_path = "D:/temp_medias/binglinchengxia\兵临城下\chapter_0\chunk_58/video_shots_info.json"
+    info_path = "./debug/video_shots_info.json"
     with open(info_path, 'r', encoding='utf-8') as f:
         data = json.load(f)
-    concat_images_to_video(images_with_duration_list=data, work_dir="D:/temp_medias/binglinchengxia\兵临城下\chapter_0\chunk_58/")
+    concat_images_to_video(images_with_duration_list=data, work_dir="")
 
