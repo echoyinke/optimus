@@ -385,6 +385,57 @@ def concat_images_to_video(work_dir, shot_info=None, video_ratio="16:9"):
     for tmp_output_video_path in tmp_output_video_path_list:
         os.remove(tmp_output_video_path)
 
+def add_bgm(work_dir, video_path, music_path, bgm_volume=0.5):
+    # 获取视频时长
+    video_info_command = [
+        'ffprobe',
+        '-v', 'error',
+        '-show_entries', 'format=duration',
+        '-of', 'default=noprint_wrappers=1:nokey=1',
+        video_path
+    ]
+    video_duration = float(subprocess.check_output(video_info_command).strip())
+
+    # 创建一个临时文件来存储循环的背景音乐
+    looped_music = os.path.join(work_dir, os.path.basename(music_path).replace(".mp3", "_looped.mp3"))
+    loop_bgm_command = [
+        'ffmpeg',
+        '-loglevel', 'error',  # 只输出错误信息
+        '-y',
+        '-stream_loop', '-1',  # 无限循环
+        '-i', music_path,  # 输入背景音乐路径
+        '-t', str(video_duration),  # 设置输出文件的时长
+        '-c:a', 'copy',  # 复制音频流
+        looped_music  # 输出循环背景音乐路径
+    ]
+    logger.info(f"Running FFmpeg command: loop_bgm_command for {music_path} ...")
+    subprocess.run(loop_bgm_command, check=True)
+
+    output_path = video_path.replace(".mp4", "_with_bgm.mp4")
+    add_bgm_command = [
+        'ffmpeg',
+        '-loglevel', 'error',  # 只输出错误信息
+        '-y',
+        '-i', video_path,  # 输入视频路径
+        '-i', looped_music,  # 输入循环背景音乐路径
+        '-filter_complex', f'[1:a]volume={bgm_volume}[bgm];[0:a][bgm]amix=inputs=2:duration=longest[aout]',  # 调整BGM音量并混合音频
+        '-map', '0:v',  # 使用原视频的视频流
+        '-map', '[aout]',  # 使用混合后的音频
+        '-c:v', 'copy',  # 复制视频流
+        '-c:a', 'aac',  # 编码音频流
+        '-shortest',  # 使输出文件的长度与最短输入文件的长度相同
+        output_path  # 输出视频路径
+    ]
+    logger.info(f"Running FFmpeg command: add_bgm_command for {video_path} with {looped_music} ...")
+    subprocess.run(add_bgm_command, check=True)
+
+    # 删除临时文件
+    os.remove(looped_music)
+
+    return output_path
+
+
+
 
 if __name__ == '__main__':
     # video_path =  'D:/temp_medias/jieya_video/chongyaji.mp4'
@@ -396,7 +447,9 @@ if __name__ == '__main__':
     # #merge_video_audio_subtitle(video_path,audio_path ,output_cover, subtitle_path,output_path)
     # # make_cover(input_cover,1, 0, output_cover)
     # add_cover(video_path, cover_path, output_path)
-    shots_path = "/Users/yinke/PycharmProjects/optimus/optimus_tools/outputs/video_shots_info.json"
-    with open(shots_path, 'r', encoding='utf-8') as f:
-        # 使用 json.load() 从文件中加载数据
-        data = json.load(f)
+    # shots_path = "/Users/yinke/PycharmProjects/optimus/optimus_tools/outputs/video_shots_info.json"
+    #with open(shots_path, 'r', encoding='utf-8') as f:
+    #    # 使用 json.load() 从文件中加载数据
+    #    data = json.load(f)
+
+    add_bgm("./debug", "./debug/video.mp4", "./bgm/suspensesuspend/1.mp3")
