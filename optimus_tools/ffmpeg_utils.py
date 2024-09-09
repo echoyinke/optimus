@@ -346,13 +346,13 @@ def concat_images_to_video(work_dir, shot_info=None, video_ratio="16:9"):
         zoom_factor = 0.015
         special_effect = {
             # 缩放, z代表每一帧的缩放比例, s代表输出视频的宽高, fps代表每秒帧数, d代表总共的帧数
-            "zoompan_left_up": f"zoompan=z='zoom+{zoom_factor / fps}':s={video_size}:fps={fps}:d={fps}*{duration}",
-            "zoompan_left_down": f"zoompan=x='0':y='ih*(1-1/zoom)':z='zoom+{zoom_factor / fps}':fps={fps}:d={fps}*{duration}:s={video_size}",
-            "zoompan_right_up": f"zoompan=x='iw*(1-1/zoom)':y='0':z='zoom+{zoom_factor / fps}':fps={fps}:d={fps}*{duration}:s={video_size}",
-            "zoompan_right_down": f"zoompan=x='iw*(1-1/zoom)':y='ih*(1-1/zoom)':z='zoom+{zoom_factor / fps}':fps={fps}:d={fps}*{duration}:s={video_size}",
-            "zoompan_center": f"zoompan=x='iw/2*(1-1/zoom)':y='ih/2*(1-1/zoom)':z='zoom+{zoom_factor / fps}':fps={fps}:d={fps}*{duration}:s={video_size}",
-            "zoompan_left_to_right": f"zoompan='1.2':x='if(lte(on,-1),(iw-iw/zoom)/2,x+0.1)':y='if(lte(on,1),(ih-ih/zoom)/2,y)':fps={fps}:d={fps}*{duration}:s={video_size}",
-            "zoompan_right_to_left": f"zoompan='1.2':x='if(lte(on,1),(iw/zoom)/2,x-0.1)':y='if(lte(on,1),(ih-ih/zoom)/2,y)':fps={fps}:d={fps}*{duration}:s={video_size}",
+            # "zoompan_left_up": f"zoompan=z='zoom+{zoom_factor / fps}':s={video_size}:fps={fps}:d={fps}*{duration}",
+            # "zoompan_left_down": f"zoompan=x='0':y='ih*(1-1/zoom)':z='zoom+{zoom_factor / fps}':fps={fps}:d={fps}*{duration}:s={video_size}",
+            # "zoompan_right_up": f"zoompan=x='iw*(1-1/zoom)':y='0':z='zoom+{zoom_factor / fps}':fps={fps}:d={fps}*{duration}:s={video_size}",
+            # "zoompan_right_down": f"zoompan=x='iw*(1-1/zoom)':y='ih*(1-1/zoom)':z='zoom+{zoom_factor / fps}':fps={fps}:d={fps}*{duration}:s={video_size}",
+            # "zoompan_center": f"zoompan=x='iw/2*(1-1/zoom)':y='ih/2*(1-1/zoom)':z='zoom+{zoom_factor / fps}':fps={fps}:d={fps}*{duration}:s={video_size}",
+            # "zoompan_left_to_right": f"zoompan='1.2':x='if(lte(on,-1),(iw-iw/zoom)/2,x+0.1)':y='if(lte(on,1),(ih-ih/zoom)/2,y)':fps={fps}:d={fps}*{duration}:s={video_size}",
+            # "zoompan_right_to_left": f"zoompan='1.2':x='if(lte(on,1),(iw/zoom)/2,x-0.1)':y='if(lte(on,1),(ih-ih/zoom)/2,y)':fps={fps}:d={fps}*{duration}:s={video_size}",
             "zoompan_up_to_down": f"zoompan='1.2':x='if(lte(on,1),(iw-iw/zoom)/2,x)':y='if(lte(on,-1),(ih-ih/zoom)/2,y+0.05)':fps={fps}:d={fps}*{duration}:s={video_size}",
             "zoompan_down_to_up": f"zoompan='1.2':x='if(lte(on,1),(iw-iw/zoom)/2,x)':y='if(lte(on,1),(ih/zoom)/2,y-0.05)':fps={fps}:d={fps}*{duration}:s={video_size}",
         }
@@ -452,4 +452,5 @@ if __name__ == '__main__':
     #    # 使用 json.load() 从文件中加载数据
     #    data = json.load(f)
 
-    add_bgm("./debug", "./debug/video.mp4", "./bgm/suspensesuspend/1.mp3")
+    # add_bgm("./debug", "./debug/video.mp4", "./bgm/suspense/1.mp3")
+    concat_images_to_video("./debug", "./debug/shot_info.json")    
