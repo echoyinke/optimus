@@ -12,15 +12,14 @@ logger = logging.getLogger(__name__)
 session = requests.Session()
 session.headers.update({"User-Agent": "Mozilla/5.0"})
 
-def get_all_usernames():
-    """ 获取 Hentai-Foundry 网站上的所有用户名 """
+def get_all_users_data():
+    """ 获取 Hentai-Foundry 网站上的所有用户数据 """
     base_user_url = "https://www.hentai-foundry.com/users/byletter/"
     letters = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ") + ["0"]  # '0'代表数字或符号
-    all_users = []
+    user_data_list = []
     
-    for letter in letters[0]:
+    for letter in letters:
         page = 1
-        letter_users = []
         while True:
             page_url = f"{base_user_url}{letter}?page={page}&enterAgree=1"
             resp = session.get(page_url)
@@ -33,24 +32,27 @@ def get_all_usernames():
             if not user_links:
                 logger.info(f"字母 {letter} 的第 {page} 页没有用户数据，结束该字母爬取")
                 break
-            logger.info(f"开始爬取字母 {letter}， 分页 {page} 的用户列表（共{len(user_links)}）...")
+
+            logger.info(f"开始爬取字母 {letter}，分页 {page} 的用户列表（共 {len(user_links)}）...")
+            
             for a in user_links:
                 username = a.get_text(strip=True)
                 href = a['href']
                 if href.startswith("/user/") and username and href.split("/user/")[1].startswith(username):
-                    letter_users.append(username)
+                    user_info = get_user_info(username)
+                    if user_info:
+                        user_data_list.append(user_info)
+                    else:
+                        logger.warning(f"用户 {username} 爬取失败")
 
             nav_text = soup.get_text()
             if re.search(r'Next\s*>', nav_text) is None:
                 logger.info(f"字母 {letter} 的第 {page} 页没有更多分页，结束该字母爬取")
                 break
             page += 1
-            # break
-        logger.info(f"字母 {letter} 共爬取到 {len(letter_users)} 个用户")
-        all_users.extend(letter_users)
 
-    logger.info(f"总共收集到 {len(all_users)} 个用户用户名")
-    return all_users
+    logger.info(f"成功爬取 {len(user_data_list)} 个用户的详细信息")
+    return user_data_list
 
 def get_user_info(username):
     """ 爬取单个用户的详细信息 """
@@ -134,16 +136,5 @@ def get_user_info(username):
     return user_data
 
 # 执行爬取任务
-logger.info("开始获取所有用户...")
-all_users = get_all_usernames()
-total_users = len(all_users)
-user_data_list = []
-
-for username in tqdm(all_users, desc="爬取用户进度", unit="user"):
-    user_info = get_user_info(username)
-    if user_info:
-        user_data_list.append(user_info)
-    else:
-        logger.warning(f"用户 {username} 爬取失败")
-
-logger.info(f"成功爬取 {len(user_data_list)} 个用户的详细信息")
+logger.info("开始获取所有用户数据...")
+user_data_list = get_all_users_data()
