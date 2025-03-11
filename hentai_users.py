@@ -45,7 +45,7 @@ def get_all_usernames():
                 logger.info(f"字母 {letter} 的第 {page} 页没有更多分页，结束该字母爬取")
                 break
             page += 1
-            break
+            # break
         logger.info(f"字母 {letter} 共爬取到 {len(letter_users)} 个用户")
         all_users.extend(letter_users)
 
