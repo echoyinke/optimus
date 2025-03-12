@@ -3,6 +3,8 @@ import requests
 import logging
 from bs4 import BeautifulSoup
 from tqdm import tqdm
+import jsonlines
+from time import sleep
 
 # 设置日志
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -12,47 +14,46 @@ logger = logging.getLogger(__name__)
 session = requests.Session()
 session.headers.update({"User-Agent": "Mozilla/5.0"})
 
-def get_all_users_data():
+def get_all_users_data(output_file):
     """ 获取 Hentai-Foundry 网站上的所有用户数据 """
     base_user_url = "https://www.hentai-foundry.com/users/byletter/"
     letters = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ") + ["0"]  # '0'代表数字或符号
-    user_data_list = []
     
-    for letter in letters:
-        page = 1
-        while True:
-            page_url = f"{base_user_url}{letter}?page={page}&enterAgree=1"
-            resp = session.get(page_url)
-            if resp.status_code != 200:
-                logger.warning(f"请求失败: {resp.status_code}，跳过 {letter} 页 {page}")
-                break
-            
-            soup = BeautifulSoup(resp.text, "html.parser")
-            user_links = soup.find_all('a', href=re.compile(r'/user/'))
-            if not user_links:
-                logger.info(f"字母 {letter} 的第 {page} 页没有用户数据，结束该字母爬取")
-                break
+    with jsonlines.open(output_file, mode='a') as writer:
+        for letter in letters:
+            page = 1
+            while True:
+                page_url = f"{base_user_url}{letter}?page={page}&enterAgree=1"
+                resp = session.get(page_url)
+                if resp.status_code != 200:
+                    logger.warning(f"请求失败: {resp.status_code}，跳过 {letter} 页 {page}")
+                    break
+                
+                soup = BeautifulSoup(resp.text, "html.parser")
+                user_links = soup.find_all('a', href=re.compile(r'/user/'))
+                if not user_links:
+                    logger.info(f"字母 {letter} 的第 {page} 页没有用户数据，结束该字母爬取")
+                    break
 
-            logger.info(f"开始爬取字母 {letter}，分页 {page} 的用户列表（共 {len(user_links)}）...")
-            
-            for a in user_links:
-                username = a.get_text(strip=True)
-                href = a['href']
-                if href.startswith("/user/") and username and href.split("/user/")[1].startswith(username):
-                    user_info = get_user_info(username)
-                    if user_info:
-                        user_data_list.append(user_info)
-                    else:
-                        logger.warning(f"用户 {username} 爬取失败")
+                logger.info(f"开始爬取字母 {letter}，分页 {page} 的用户列表（共 {len(user_links)}）...")
+                
+                for a in user_links:
+                    username = a.get_text(strip=True)
+                    href = a['href']
+                    if href.startswith("/user/") and username and href.split("/user/")[1].startswith(username):
+                        user_info = get_user_info(username)
+                        if user_info:
+                            writer.write(user_info)  # 逐行写入 JSONLines
+                        else:
+                            logger.warning(f"用户 {username} 爬取失败")
 
-            nav_text = soup.get_text()
-            if re.search(r'Next\s*>', nav_text) is None:
-                logger.info(f"字母 {letter} 的第 {page} 页没有更多分页，结束该字母爬取")
-                break
-            page += 1
+                nav_text = soup.get_text()
+                if re.search(r'Next\s*>', nav_text) is None:
+                    logger.info(f"字母 {letter} 的第 {page} 页没有更多分页，结束该字母爬取")
+                    break
+                page += 1
 
-    logger.info(f"成功爬取 {len(user_data_list)} 个用户的详细信息")
-    return user_data_list
+    logger.info(f"成功爬取用户数据")
 
 def get_user_info(username):
     """ 爬取单个用户的详细信息 """
@@ -130,11 +131,10 @@ def get_user_info(username):
             user_data['social_links'].append(href.strip())
 
     user_data['social_links'] = list(set(user_data['social_links']))  # 去重
-
-    logger.info(f"成功获取用户 {username}: {user_data}")
     
     return user_data
 
 # 执行爬取任务
 logger.info("开始获取所有用户数据...")
-user_data_list = get_all_users_data()
+output_file = "hentai_users.jsonl"
+get_all_users_data(output_file)

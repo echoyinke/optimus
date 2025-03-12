@@ -12,3 +12,4 @@ account.json
 .vscode/
 debug/
 bgm/
+data_crawl/outputs/*
