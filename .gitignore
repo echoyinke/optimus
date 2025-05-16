@@ -12,4 +12,10 @@ account.json
 .vscode/
 debug/
 bgm/
-data_crawl/outputs/*
+**outputs/
+outputs/
+*.json
+*.jsonl
+nohup.out
+outputs
+poetry.lock

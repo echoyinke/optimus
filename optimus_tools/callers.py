@@ -3,7 +3,7 @@ import copy
 import re
 import time
 import logging
-from utils import *
+from data_crawl.core.utils import *
 import os
 
 

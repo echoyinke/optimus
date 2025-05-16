@@ -1,10 +1,30 @@
 import requests
 from bs4 import BeautifulSoup
 import os, json, time
+import sys
+import os
+import concurrent.futures
+import logging
+import jsonlines
+import re
+from fake_useragent import UserAgent
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+# 设置日志
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
+
+# 获取当前文件所在目录的上层目录
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+# 将上层目录添加到 sys.path
+sys.path.append(parent_dir)
+
+from data_crawl.core.utils import *
 # 全局配置
 BASE_URL = "https://www.hentai-foundry.com"
-OUTPUT_DIR = "./HentaiFoundry"  # 输出保存目录
+OUTPUT_DIR = "/Users/yinke/VscodeProject/optimus/outputs/crawl_pics/"  # 输出保存目录
 # 构造请求会话，附加Headers模拟浏览器
 session = requests.Session()
 session.headers.update({
@@ -13,6 +33,22 @@ session.headers.update({
     "Accept-Language": "en-US,en;q=0.9",
 })
 
+def setup_logger(username):
+    """为每个用户设置单独的日志记录"""
+    log_file = f"./outputs/crawl_pics/logs/{username}.log"
+    os.makedirs(os.path.dirname(log_file), exist_ok=True)
+
+    file_handler = logging.FileHandler(log_file, mode='a', encoding='utf-8')
+    file_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+
+    user_logger = logging.getLogger(f"logger_{username}")
+    user_logger.setLevel(logging.INFO)
+    user_logger.addHandler(file_handler)
+    
+    return user_logger, file_handler
+
+
+
 def bypass_age_check():
     """通过年龄验证，获取必要的cookie。"""
     url = f"{BASE_URL}/?enterAgree=1"
@@ -20,24 +56,24 @@ def bypass_age_check():
         res = session.get(url)
         # 检查是否成功进入
         if res.status_code == 200:
-            print("Age check passed, session cookies:", session.cookies.get_dict())
+            logger.info("Age check passed, session cookies: %s", session.cookies.get_dict())
         else:
-            print("Failed to bypass age check, status:", res.status_code)
+            logger.warning("Failed to bypass age check, status: %s", res.status_code)
     except Exception as e:
-        print("Error in age check:", e)
+        logger.warning("Error in age check: %s", e)
 
 def get_soup(url):
     """请求URL并返回解析后的BeautifulSoup对象。若请求失败返回None。"""
     try:
-        res = session.get(url)
+        res = session.get(url, headers={"User-Agent": UserAgent().random, "Accept-Language": "en-US,en;q=0.9"})  # 关闭 SSL 证书验证
         if res.status_code != 200:
-            print(f"Warning: Received status {res.status_code} for URL: {url}")
+            logger.warning("Warning: Received status %s for URL: %s", res.status_code, url)
             return None
         # 解析 HTML 文档
         html = res.text
         return BeautifulSoup(html, "html.parser")
     except Exception as e:
-        print(f"Request error for {url}: {e}")
+        logger.warning("Request error for %s: %s", url, e)
         return None
 
 def parse_image_page(page_url):
@@ -149,81 +185,92 @@ def download_image(img_url, save_path):
     try:
         # 为防止某些站点要求Referer，这里加上:
         headers = {"Referer": BASE_URL}
-        res = session.get(img_url, headers=headers)
+        res = session.get(img_url, headers=headers, verify=False)  # 关闭 SSL 证书验证
         if res.status_code == 200:
             with open(save_path, "wb") as f:
                 f.write(res.content)
             return True
         else:
-            print(f"Failed to download image, status {res.status_code}: {img_url}")
+            logger.warning("Failed to download image, status %s: %s", res.status_code, img_url)
     except Exception as e:
-        print(f"Error downloading image {img_url}: {e}")
+        logger.warning("Error downloading image %s: %s", img_url, e)
     return False
+
+def read_meta(data_file):
+    """ 获取已爬取的用户列表 """
+    os.makedirs(os.path.dirname(data_file), exist_ok=True)  # 确保路径存在
+    if not os.path.exists(data_file):
+        os.makedirs(os.path.dirname(data_file), exist_ok=True)  # 确保路径存在
+        return set(), 1
+    exists = set()
+    with jsonlines.open(data_file, mode='r') as reader:
+        offset=1
+        for obj in reader:
+            exists.add(obj['image_url'])
+            offset=obj["page"]
+    return exists, offset
 
 def crawl_user_gallery(username):
     """爬取指定用户的所有图片和元数据（逐行存储 JSONL，节省内存）。"""
-    print(f"Start crawling user: {username}")
+    user_logger, file_handler = setup_logger(username)
+    user_logger.info("Start crawling user: %s", username)
+    meta_file = os.path.join(OUTPUT_DIR, username, "metadata.jsonl")
 
-    user_dir = os.path.join(OUTPUT_DIR, f"user_{username}")
-    os.makedirs(user_dir, exist_ok=True)
+    exists, page = read_meta(meta_file)    
     
-    meta_file = os.path.join(user_dir, f"{username}_metadata.jsonl")  # 改成 JSONL 格式
-    page = 1
 
-    with open(meta_file, "a", encoding="utf-8") as f:  # 追加模式
-        while True:
+    with jsonlines.open(meta_file, mode="a") as writer:
+          # 追加模式
+        while page < 20:
+            user_logger.info(f"Begining to crawl {username} at page {page} ...")
             gallery_url = f"{BASE_URL}/pictures/user/{username}/page/{page}"
             soup = get_soup(gallery_url)
-            if not soup:
-                break
-
-            # 获取作品页面的链接
             pic_links = soup.select(f"a[href*='/pictures/user/{username}/']")
+            image_url_pattern = re.compile(rf"/pictures/user/{username}/(\d+)/")
             pic_page_urls = set(
                 BASE_URL + a.get("href") if a.get("href").startswith("/") else a.get("href")
-                for a in pic_links if a.get("href") and not a.get("href").strip().endswith(username)
+                for a in pic_links if a.get("href") and image_url_pattern.search(a.get("href"))
             )
-            if not pic_page_urls:
-                break
 
             # 遍历当前页的作品
             for url in pic_page_urls:
-                print(f"  Parsing image page: {url}")
                 info = parse_image_page(url)
-                if not info:
+
+                # 检查是否已下载过该图片（断点续爬）
+                img_url = info.get("image_url")
+                if img_url and img_url in exists:
+                    user_logger.info("Skipping already downloaded image: %s", img_url)
                     continue
 
                 # 下载图片
-                img_url = info.get("image_url")
                 if img_url:
                     filename = os.path.basename(img_url)
-                    save_path = os.path.join(user_dir, filename)
+                    save_path = os.path.join(OUTPUT_DIR, username, filename)
                     if download_image(img_url, save_path):
-                        info["saved_path"] = save_path
-                        print(f"    Downloaded image: {filename}")
-
-                # **每次存储 JSON 行，避免占用过多内存**
-                f.write(json.dumps(info, ensure_ascii=False) + "\n")
-                f.flush()  # 立即写入磁盘，避免数据丢失
+                        info['page']=page
+                        writer.write(info)
+                        exists.add(img_url)  # 更新已爬取列表
                 
-                time.sleep(1)  # 控制爬取速率
 
             # 检查是否有下一页
             next_link = soup.find("a", string="Next >")
-            if next_link:
-                page += 1
-                continue
+            total_pics=999
+            match = re.search(r"(\d+)\s+results", soup.get_text())
+            if match:
+                total_pics=int(match.group(1))
+            if next_link is None or len(exists)> total_pics * 0.9:
+                user_logger.info(f"finish crawl {username} at page {page} ...")
+                break
             else:
-                if len(pic_page_urls) < 25:
-                    break
-                page += 1
+                page+=1
 
-    print(f"Completed user {username}. Metadata saved to {meta_file}.")
+    user_logger.removeHandler(file_handler)
+    file_handler.close()
 
 def crawl_category(category_id, category_name=None):
     """爬取指定分类ID下的所有图片，逐步存储 JSONL，避免占用过多内存"""
     cat_label = category_name if category_name else str(category_id)
-    print(f"Start crawling category: {cat_label} (ID={category_id})")
+    logger.info("Start crawling category: %s (ID=%s)", cat_label, category_id)
 
     cat_dir = os.path.join(OUTPUT_DIR, f"category_{cat_label.replace('/', '_')}")
     os.makedirs(cat_dir, exist_ok=True)
@@ -247,7 +294,7 @@ def crawl_category(category_id, category_name=None):
 
             # 遍历当前页作品
             for url in pic_page_urls:
-                print(f"  Parsing image page: {url}")
+                logger.info("Parsing image page: %s", url)
                 info = parse_image_page(url)
                 if not info:
                     continue
@@ -259,7 +306,7 @@ def crawl_category(category_id, category_name=None):
                     save_path = os.path.join(cat_dir, filename)
                     if download_image(img_url, save_path):
                         info["saved_path"] = save_path
-                        print(f"    Downloaded image: {filename}")
+                        logger.info("Downloaded image: %s", filename)
 
                 # **每次存储 JSON 行，避免占用过多内存**
                 f.write(json.dumps(info, ensure_ascii=False) + "\n")
@@ -277,13 +324,22 @@ def crawl_category(category_id, category_name=None):
                     break
                 page += 1
 
-    print(f"Completed category {cat_label}. Metadata saved to {meta_file}.")
+    logger.info("Completed category %s. Metadata saved to %s.", cat_label, meta_file)
 
 # =============== 主程序调用 =================
 if __name__ == "__main__":
-    # 示例：爬取用户"GloomFlower"和分类"Original/Pin-ups"
-    bypass_age_check()  # 先通过年龄验证获取cookie
-    # 爬取指定用户
-    crawl_user_gallery("GloomFlower")
-    # 爬取指定分类（已知 Original/Pin-ups 的ID是147）
-    crawl_category(147, "Original-Pin-ups")
+    bypass_age_check()
+    data = read_data("/Users/yinke/VscodeProject/optimus/data_crawl/top_users.json")
+    # data=[{"username":"Exodusisnear"}]
+    max_workers = 4  # 线程数
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = {executor.submit(crawl_user_gallery, d["username"]): d["username"] for d in data}
+
+        for future in concurrent.futures.as_completed(futures):
+            username = futures[future]
+            try:
+                future.result()  # 获取执行结果，处理异常
+            except Exception as e:
+                logger.exception("用户 %s 爬取过程中出现异常", username)
+    
+    logger.info("所有用户数据爬取完成")

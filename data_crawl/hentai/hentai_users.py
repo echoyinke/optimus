@@ -12,6 +12,7 @@ import traceback
 import time
 import sys
 import random
+from fake_useragent import UserAgent
 
 # 设置日志
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -27,7 +28,7 @@ from urllib3.util.retry import Retry
 # 配置 Session 进行重试
 retry_strategy = Retry(
     total=3,  # 最大重试次数
-    backoff_factor=3,  # 重试间隔：1秒，2秒，4秒...
+    backoff_factor=30,  # 重试间隔：1秒，2秒，4秒...
     status_forcelist=[500, 502, 503, 504],  # 只在服务器错误时重试
     allowed_methods=["GET"]
 )
@@ -74,15 +75,11 @@ def crawl_letter_data(letter):
     with jsonlines.open(data_file, mode='a') as writer:
         page = last_page
         thread_logger.info(f"letter {letter} resume from page: {page}")
-        while True:
+        while page < 500: # 只爬去前500页
             page_url = f"{base_user_url}?page={page}&enterAgree=1"
-            resp = session.get(page_url)  # 使用通用重试机制
+            resp = session.get(page_url, headers={"User-Agent": UserAgent().random, "Accept-Language": "en-US,en;q=0.9"})  # 使用通用重试机制
             soup = BeautifulSoup(resp.text, "html.parser")
             user_links = soup.find_all('a', href=re.compile(r'/user/'))
-            if not user_links:
-                thread_logger.info(f"字母 {letter} 的第 {page} 页没有用户数据，结束该字母爬取")
-                break
-
             thread_logger.info(f"开始爬取字母 {letter}，分页 {page} 的用户列表（共 {len(user_links)}）...")
 
             for a in user_links:
@@ -100,13 +97,22 @@ def crawl_letter_data(letter):
                     else:
                         thread_logger.warning(f"用户 {username} 爬取失败")
 
-            nav_text = soup.get_text()
-            if re.search(r'Next\s*>', nav_text) is None:
-                thread_logger.info(f"字母 {letter} 的第 {page} 页没有更多分页，结束该字母爬取")
-                break
-            page += 1  # 进入下一页
 
-    thread_logger.info(f"字母 {letter} 爬取完成")
+            next_page = soup.find("a", string="Next >")
+
+            if next_page:
+                next_href = next_page.get("href")
+                match = re.search(r'/page/(\d+)', next_href)                
+                if match:
+                    next_page_number = int(match.group(1))
+                    if next_page_number <= page:  # "Next >" 指向当前页或更小，说明是最后一页
+                        next_page = None
+
+            if not next_page:
+                thread_logger.info(f"结束爬取到字母 {letter}，在最后分页 {page} 的，共爬取{len(existing_users)}...")
+                break
+            else:
+                page += 1  # 进入下一页
 
     # 释放日志 handler，防止重复日志
     thread_logger.removeHandler(file_handler)
@@ -114,7 +120,9 @@ def crawl_letter_data(letter):
 
 def get_all_users_data():
     """ 使用多线程并行爬取不同字母的用户数据 """
-    letters = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+    letters = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ") + ["0"]
+    # letters = ["A"]
+
     # max_workers = len(letters)
     max_workers = 8
 
@@ -127,19 +135,16 @@ def get_all_users_data():
             try:
                 future.result()  # 获取执行结果，如果有异常会抛出
             except Exception as e:
-                logger.error(f"字母 {letter} 爬取过程中出现异常: {e}")
-                logger.error(traceback.format_exc())
-                sys.exit(1)  # **主线程退出，终止整个程序**
-
+                logger.exception(f"字母 {letter} 爬取过程中出现异常")  # 自动记录 traceback
 
     logger.info("所有字母数据爬取完成")
 
 def get_user_info(username):
     """ 随机睡眠，减小压力 """
-    time.sleep(random.uniform(2, 5)) 
+    time.sleep(random.uniform(0, 3))
     profile_url = f"https://www.hentai-foundry.com/user/{username}/profile?enterAgree=1"
     logger.debug(f"正在获取用户 {username} 的信息: {profile_url}")
-    resp = session.get(profile_url)
+    resp = session.get(profile_url, headers={"User-Agent": UserAgent().random, "Accept-Language": "en-US,en;q=0.9"})
 
     soup = BeautifulSoup(resp.text, "html.parser")
     

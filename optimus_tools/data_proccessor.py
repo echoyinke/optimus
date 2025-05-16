@@ -7,8 +7,8 @@ import jsonlines
 import os
 import re
 from datetime import datetime
-import callers
-from utils import read_data, write_json, send_post_request
+import data_crawl.core.callers as callers
+from data_crawl.core.utils import read_data, write_json, send_post_request
 import traceback
 
 

@@ -71,11 +71,12 @@ def read_data(input_paths: Union[str, List[str]]) -> List[Any]:
                 all_data.extend(data if isinstance(data, list) else [data])
                 logger.info(f"Loaded {len(data)} items from {file_path}.")
         elif file_path.endswith('.jsonl'):
+            logger.info(f"Begin to load items from {file_path}.")
             with jsonlines.open(file_path, mode='r') as reader:
                 lenth_before = len(all_data)
                 all_data.extend(reader)
             logger.info(
-                f"Loaded {lenth_before-len(all_data)} items from {file_path}.")
+                f"Loaded {len(all_data)-lenth_before} items from {file_path}.")
         else:
             raise ValueError(f"Unsupported file format: {file_path}")
     if not all_data:
