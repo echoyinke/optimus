@@ -9,4 +9,4 @@
 * pip install -r requirements
 
 
-poetry run python -m data_crawl.twitter.play_twitter
+poetry run python -m data_crawl.twitter.reply_twitter
