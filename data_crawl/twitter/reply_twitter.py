@@ -4,6 +4,7 @@ import random
 import pyotp
 import argparse
 from optimus_tools.playwright_utils import *
+from optimus_tools.data_utils import *
 import logging
 
 # 设置全局日志配置
@@ -262,26 +263,56 @@ def post_comments_to_users(page, users_list, comment_text_list, output_dir="."):
     - users_list: 用户名列表
     - comment_text: 评论内容
     """
+    import json
+    from pathlib import Path
+    import jsonlines
+    import datetime
+
+    status_file_path=output_dir+"/comment_status.jsonl"
+    data = read_data(status_file_path)
+    alread_comment_users=[d['username'] for d in data]
+
     success_count = 0
     fail_count = 0
     
-    for username in users_list:
-        comment_text = random.choice(comment_text_list)
-        try:
+    with jsonlines.open(status_file_path, mode='a') as writer:
+        for username in users_list:
+            if username in alread_comment_users:
+                logger.info(f"跳过已处理用户 {username}")
+                continue
+            comment_text = random.choice(comment_text_list)
             logger.info(f"准备对用户 {username} 发表评论...")
-            success = post_comment(page, username, comment_text, output_dir)
-            if success:
-                success_count += 1
-                logger.info(f"成功评论 {username} 的推文 ({success_count}/{len(users_list)})")
-                human_behavior(page, 20, 40, True, True)
-            else:
+            try:
+                success = post_comment(page, username, comment_text, output_dir)
+                if success:
+                    success_count += 1
+                    logger.info(f"成功评论 {username} 的推文 ({success_count}/{len(users_list)})")
+                    writer.write({"username": username, "status": "success", "time": datetime.datetime.now().isoformat()})
+                    # 模拟浏览主页
+                    try:
+                        logger.info(f"模拟浏览 {username} 的其他内容...")
+                        page.mouse.wheel(0, random.randint(500, 1500))
+                        human_behavior(page, 3, 6)
+                        page.mouse.wheel(0, -random.randint(200, 600))
+                        human_behavior(page, 2, 5)
+                        logger.info("浏览结束")
+                    except Exception as e:
+                        logger.info(f"浏览过程出错: {e}")
+                    human_behavior(page, 20, 40, True, True)
+                else:
+                    fail_count += 1
+                    logger.info(f"评论 {username} 的推文失败 ({fail_count} 失败)")
+                    writer.write({"username": username, "status": "fail", "time": datetime.datetime.now().isoformat()})
+            except Exception as e:
                 fail_count += 1
-                logger.info(f"评论 {username} 的推文失败 ({fail_count} 失败)")
+                logger.info(f"处理用户 {username} 时出错: {e}")
+                writer.write({"username": username, "status": "exception", "time": datetime.datetime.now().isoformat(), "error":str(e)})
             human_behavior(page, 5, 15, True, True)
-        except Exception as e:
-            fail_count += 1
-            logger.info(f"处理用户 {username} 时出错: {e}")
-            human_behavior(page, 5, 10)
+            # 添加额外随机 sleep 模拟人类暂停
+            sleep_time = random.uniform(3, 10)
+            logger.info(f"模拟人类停顿，休息 {sleep_time:.2f} 秒")
+            time.sleep(sleep_time)
+
     logger.info(f"评论任务完成: 成功 {success_count}, 失败 {fail_count}")
 
 
@@ -292,6 +323,11 @@ def run(playwright: Playwright, args) -> None:
     totp_secret = args.totp_secret
     proxy = args.proxy
     target_users=args.target_users
+    # 如果提供了 target_user_file 参数，则覆盖 target_users
+    if args.target_user_file:
+        data=read_data(args.target_user_file)
+        usernames=[d['screen_name'] for d in data]
+        target_users=usernames
     comment_text=args.comment_text
     output_dir = args.output_dir
     headless = args.headless
@@ -365,6 +401,7 @@ if __name__ == "__main__":
     parser.add_argument("--proxy", default="http://127.0.0.1:4780", help="HTTP/S or SOCKS5 proxy URL")
     parser.add_argument("--comment-text", type=str, default="w", help="Text to use for the comment")
     parser.add_argument("--target_users", nargs="+", default=["elonmusk", "lblpi61994842"], help="List of usernames to comment on")
+    parser.add_argument("--target_user_file", type=str, default="/Users/yinke/VscodeProject/optimus/outputs/crawl_users/user_twitter/user_x_info.json", help="Path to a JSON file containing a list of target usernames")
     parser.add_argument("--headless", action="store_true", help="Run browser in headless mode")
     parser.add_argument("--output-dir", default="/Users/yinke/VscodeProject/optimus/outputs/comments", help="Directory for cookies, logs and outputs")
     args = parser.parse_args()
