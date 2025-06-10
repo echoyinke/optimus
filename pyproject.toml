@@ -2,7 +2,7 @@
 name = "optimus"
 version = "0.1.0"
 description = "Your ML project"
-authors = ["Your Name <your@email.com>"]
+authors = ["yinke"]
 packages = [{ include = "optimus_tools" }, { include = "data_crawl" }]
 
 [tool.poetry.dependencies]
