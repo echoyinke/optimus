@@ -7,7 +7,7 @@ import os
 import sys
 import pyotp
 import math
-from config import get_twitter_config, get_proxy_config, get_browser_config, get_file_config, get_directories, get_cookies_file_path
+from .config import get_twitter_config, get_proxy_config, get_browser_config, get_file_config, get_directories, get_cookies_file_path
 
 # 从配置文件获取配置信息
 twitter_config = get_twitter_config()

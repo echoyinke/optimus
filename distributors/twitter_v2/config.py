@@ -21,25 +21,25 @@ PROXY_CONFIG = {
 
 # 浏览器配置
 BROWSER_CONFIG = {
-    "HEADLESS": False,  # 是否无头模式
+    "HEADLESS": True,  # 是否无头模式（服务器环境必须设置为True）
     "VIEWPORT": {'width': 1366, 'height': 768},
     "USER_AGENT": 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36'
 }
 
 # 目录配置
 DIRECTORIES = {
-    "DATA_DIR": "data",           # 数据文件目录
-    "PROGRESS_DIR": "progress",   # 进度文件目录（断点恢复）
-    "RESULTS_DIR": "results",     # 结果文件目录
-    "COOKIES_DIR": "cookies",     # Cookie文件目录
-    "ERROR_HTML_DIR": "error_html"  # 错误页面保存目录
+    "DATA_DIR": "inputs/twitter/data",           # 数据文件目录
+    "PROGRESS_DIR": "outputs/twitter/progress",   # 进度文件目录（断点恢复）
+    "RESULTS_DIR": "outputs/twitter/results",     # 结果文件目录
+    "COOKIES_DIR": "outputs/twitter/cookies",     # Cookie文件目录
+    "ERROR_HTML_DIR": "outputs/twitter/error_html"  # 错误页面保存目录
 }
 
 # 文件路径配置
 FILE_CONFIG = {
-    "USERS_FILE": "data/user_x_info.json",  # 用户列表文件
-    "COMMENT_TEXT_FILE": "data/comment_text_list.json",  # 评论内容文件
-    "TWEET_CONTENT_FILE": "data/tweet_content_list.json",  # 推文内容文件
+    "USERS_FILE": "inputs/twitter/data/user_x_info.json",  # 用户列表文件
+    "COMMENT_TEXT_FILE": "inputs/twitter/data/comment_text_list.json",  # 评论内容文件
+    "TWEET_CONTENT_FILE": "inputs/twitter/data/tweet_content_list.json",  # 推文内容文件
     "COMMENT_PROGRESS_FILE": "progress/comment_progress.json",  # 评论进度记录文件
     "TWEET_PROGRESS_FILE": "progress/tweet_progress.json",  # 推文进度记录文件
 }

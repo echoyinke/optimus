@@ -3,13 +3,13 @@ import os
 import time
 import random
 from playwright.sync_api import Playwright, sync_playwright
-from twitter_common import (
+from .twitter_common import (
     human_behavior, 
     setup_browser_and_login, 
     save_error_data,
     ensure_directories
 )
-from config import get_file_config, get_behavior_config
+from .config import get_file_config, get_behavior_config
 
 def load_users_from_file(filename):
     """从JSON文件中提取screen_name字段作为用户名列表"""
@@ -394,7 +394,7 @@ def run_comment_task(playwright: Playwright) -> None:
         human_behavior(page, 3, 6, True, True)
         
         # 准备实时保存的结果文件
-        from config import get_directories
+        from .config import get_directories
         directories = get_directories()
         results_dir = directories["RESULTS_DIR"]
         

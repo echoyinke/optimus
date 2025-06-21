@@ -6,9 +6,9 @@ Twitter 自动化脚本主入口
 """
 
 from playwright.sync_api import sync_playwright
-from twitter_comment import run_comment_task
-from twitter_post import run_post_tweet_task
-from twitter_common import ensure_directories
+from .twitter_comment import run_comment_task
+from .twitter_post import run_post_tweet_task
+from .twitter_common import ensure_directories
 
 def main():
     """主函数，提供功能选择菜单"""

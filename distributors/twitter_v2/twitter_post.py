@@ -3,13 +3,13 @@ import os
 import time
 import random
 from playwright.sync_api import Playwright, sync_playwright
-from twitter_common import (
+from .twitter_common import (
     human_behavior, 
     setup_browser_and_login, 
     save_error_data,
     ensure_directories
 )
-from config import get_behavior_config, get_file_config
+from .config import get_behavior_config, get_file_config
 
 def load_tweet_content_from_file(filename):
     """从JSON文件中加载推文内容列表"""
@@ -551,7 +551,7 @@ def run_post_tweet_task(playwright: Playwright) -> None:
         print(f"💾 成功发布的推文将实时保存到: {tweet_progress_file}")
         
         # 准备实时保存的结果文件
-        from config import get_directories
+        from .config import get_directories
         directories = get_directories()
         results_dir = directories["RESULTS_DIR"]
         

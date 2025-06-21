@@ -3,7 +3,7 @@ name = "optimus"
 version = "0.1.0"
 description = "Your ML project"
 authors = ["yinke"]
-packages = [{ include = "optimus_tools" }, { include = "data_crawl" }]
+packages = [{ include = "optimus_tools" }, { include = "crawlers" }, { include = "distributors" }]
 
 [tool.poetry.dependencies]
 python = ">=3.10"
