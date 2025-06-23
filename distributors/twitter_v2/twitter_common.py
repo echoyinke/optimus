@@ -282,6 +282,7 @@ def setup_browser_and_login(playwright: Playwright):
     - tuple: (browser, context, page) 或 (None, None, None) 如果失败
     """
     try:
+        print("🔧 开始设置浏览器...")
         # 设置浏览器启动选项，增加随机化特性以降低被识别风险
         browser_args = [
             '--disable-blink-features=AutomationControlled',
@@ -289,13 +290,17 @@ def setup_browser_and_login(playwright: Playwright):
             '--window-size=1920,1080',
         ]
         
+        print("🌐 启动浏览器...")
         browser = playwright.chromium.launch(headless=browser_config["HEADLESS"], channel="chrome", args=browser_args)
+        
+        print("📄 创建浏览器上下文...")
         context = browser.new_context(
             viewport=browser_config["VIEWPORT"],
             user_agent=browser_config["USER_AGENT"]
         )
         
         # 修改浏览器指纹信息以避免被检测
+        print("🎭 设置浏览器指纹...")
         context.add_init_script("""
             Object.defineProperty(navigator, 'webdriver', {
                 get: () => false
@@ -316,23 +321,45 @@ def setup_browser_and_login(playwright: Playwright):
             delete window.cdc_adoQpoasnfa76pfcZLmcfl_Symbol;
         """)
         
+        print("📱 创建新页面...")
         page = context.new_page()
         
         # 尝试加载 cookies 并登录（使用当前用户名）
+        print("🍪 尝试加载cookies...")
         cookies_loaded = load_cookies(context, USERNAME)
         
         if cookies_loaded:
+            print("🏠 访问Twitter主页...")
             # 如果加载了 cookies，尝试访问 Twitter 主页
-            page.goto("https://twitter.com/home")
+            try:
+                page.goto("https://twitter.com/home", timeout=30000)  # 增加超时时间到30秒
+                print("✅ 成功访问Twitter主页")
+            except Exception as e:
+                print(f"❌ 访问Twitter主页失败: {str(e)}")
+                # 尝试访问根域名
+                try:
+                    print("🔄 尝试访问Twitter根域名...")
+                    page.goto("https://twitter.com", timeout=30000)
+                    print("✅ 成功访问Twitter根域名")
+                except Exception as e2:
+                    print(f"❌ 访问Twitter根域名也失败: {str(e2)}")
+                    raise e2
+            
+            print("⏳ 等待页面加载...")
             human_behavior(page)
+            
+            print("🔍 检查当前页面URL...")
+            current_url = page.url
+            print(f"当前URL: {current_url}")
             
             # 检查是否需要重新登录
             if page.url.startswith("https://twitter.com/i/flow/login"):
-                print("Cookies 已过期，需要重新登录")
+                print("⚠️ Cookies已过期，需要重新登录")
                 login_with_credentials(page)
             else:
-                print("使用 Cookies 成功登录")
+                print("✅ 使用Cookies成功登录")
         else:
+            print("🔑 使用账号密码登录...")
             # 如果没有 cookies，使用账号密码登录
             login_with_credentials(page)
         
@@ -341,6 +368,9 @@ def setup_browser_and_login(playwright: Playwright):
         
     except Exception as e:
         print(f"❌ 浏览器设置或登录失败: {str(e)}")
+        print(f"📍 错误详情: {type(e).__name__}: {str(e)}")
+        import traceback
+        print(f"🔍 错误堆栈: {traceback.format_exc()}")
         return None, None, None
 
 def save_error_data(page, username, error_type):

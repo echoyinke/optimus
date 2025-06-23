@@ -13,10 +13,10 @@ TWITTER_CONFIG = {
     "TOTP_SECRET": "BUFU53PISNGHZMTS"  # 2FA后的TOTP秘钥
 }
 
-# 代理配置
+# 代理配置  
 PROXY_CONFIG = {
     "PROXY": "http://127.0.0.1:7890",  # 要挂代理，否则会出现`httpx.ConnectTimeout` 的问题
-    "USE_PROXY": False  # 是否使用代理
+    "USE_PROXY": False  # 是否使用代理 - 先禁用代理进行调试
 }
 
 # 浏览器配置
@@ -37,7 +37,7 @@ DIRECTORIES = {
 
 # 文件路径配置
 FILE_CONFIG = {
-    "USERS_FILE": "inputs/twitter/data/user_x_info.json",  # 用户列表文件
+    "USERS_FILE": "inputs/twitter/data/top_users.json",  # 用户列表文件
     "COMMENT_TEXT_FILE": "inputs/twitter/data/comment_text_list.json",  # 评论内容文件
     "TWEET_CONTENT_FILE": "inputs/twitter/data/tweet_content_list.json",  # 推文内容文件
     "COMMENT_PROGRESS_FILE": "progress/comment_progress.json",  # 评论进度记录文件

@@ -4,3 +4,4 @@
 outputs/
 inputs/
 nohup.out
+*.lock
