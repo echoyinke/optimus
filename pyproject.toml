@@ -2,13 +2,18 @@
 name = "optimus"
 version = "0.1.0"
 description = "Your ML project"
-authors = ["Your Name <your@email.com>"]
-packages = [{ include = "optimus_tools" }, { include = "data_crawl" }]
+authors = ["yinke"]
+packages = [{ include = "optimus_tools" }, { include = "crawlers" }, { include = "distributors" }]
 
 [tool.poetry.dependencies]
 python = ">=3.10"
 playwright = "^1.52.0"
 pyotp = "^2.9.0"
+matplotlib = "^3.10.3"
+requests = "^2.32.3"
+jsonlines = "^4.0.0"
+tqdm = "^4.67.1"
+tweepy = "^4.15.0"
 
 [build-system]
 requires = ["poetry-core"]
