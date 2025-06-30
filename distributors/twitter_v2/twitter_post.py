@@ -143,7 +143,6 @@ def post_tweet(page, tweet_text, image_paths=None):
             "div[data-testid='tweetTextarea_0']",
             "div[role='textbox'][data-testid='tweetTextarea_0']",
             "div[contenteditable='true'][data-testid='tweetTextarea_0']",
-            "div[aria-label='推文文本']",
             "div[aria-label='Tweet text']"
         ]
         
@@ -203,7 +202,6 @@ def post_tweet(page, tweet_text, image_paths=None):
                 # 基于HTML分析，正确的图片上传按钮选择器
                 upload_button_selectors = [
                     "button[aria-label='Add photos or video']",
-                    "button[aria-label='添加照片或视频']",
                     "div[data-testid='toolBar'] button[aria-label*='photo']",
                     "div[data-testid='toolBar'] button[aria-label*='video']",
                     "nav[role='navigation'] button[aria-label*='photo']",
@@ -237,9 +235,7 @@ def post_tweet(page, tweet_text, image_paths=None):
                             for (const button of buttons) {
                                 const ariaLabel = button.getAttribute('aria-label') || '';
                                 if (ariaLabel.toLowerCase().includes('photo') || 
-                                    ariaLabel.toLowerCase().includes('video') ||
-                                    ariaLabel.includes('照片') || 
-                                    ariaLabel.includes('视频')) {
+                                    ariaLabel.toLowerCase().includes('video')) {
                                     console.log('找到上传按钮:', ariaLabel);
                                     return {found: true, selector: 'JavaScript'};
                                 }
@@ -296,9 +292,7 @@ def post_tweet(page, tweet_text, image_paths=None):
                                     for (const button of buttons) {
                                         const ariaLabel = button.getAttribute('aria-label') || '';
                                         if (ariaLabel.toLowerCase().includes('photo') || 
-                                            ariaLabel.toLowerCase().includes('video') ||
-                                            ariaLabel.includes('照片') || 
-                                            ariaLabel.includes('视频')) {
+                                            ariaLabel.toLowerCase().includes('video')) {
                                             button.click();
                                             return;
                                         }
@@ -336,8 +330,7 @@ def post_tweet(page, tweet_text, image_paths=None):
             "div[data-testid='tweetButtonInline']",
             "button[data-testid='tweetButtonInline']",
             "div[role='button'][data-testid='tweetButton']",
-            "button[aria-label='Tweet']",
-            "button[aria-label='发推']"
+            "button[aria-label='Tweet']"
         ]
         
         tweet_button = None

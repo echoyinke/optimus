@@ -90,9 +90,7 @@ def post_comment(page, username, comment_text, image_path=None):
                     const possibleSelectors = [
                         'div[data-testid="reply"]',
                         'div[aria-label="Reply"]', 
-                        'div[aria-label="回复"]',
-                        'button[aria-label="Reply"]',
-                        'button[aria-label="回复"]'
+                        'button[aria-label="Reply"]'
                     ];
                     
                     for (const selector of possibleSelectors) {
@@ -111,8 +109,8 @@ def post_comment(page, username, comment_text, image_path=None):
                         const text = (el.textContent || '').toLowerCase();
                         const ariaLabel = (el.getAttribute('aria-label') || '').toLowerCase();
                         
-                        if ((text.includes('reply') || text.includes('回复')) || 
-                            (ariaLabel.includes('reply') || ariaLabel.includes('回复'))) {
+                        if ((text.includes('reply')) || 
+                            (ariaLabel.includes('reply'))) {
                             console.log('通过文本内容找到了可能的回复按钮');
                             el.click();
                             return true;
@@ -179,8 +177,7 @@ def post_comment(page, username, comment_text, image_path=None):
         if image_path:
             upload_button_selectors = [
                 "div[data-testid='attachments']",
-                "div[aria-label='Add photos or video']",
-                "div[aria-label='添加照片或视频']"
+                "div[aria-label='Add photos or video']"
             ]
             
             upload_button = None
@@ -207,8 +204,7 @@ def post_comment(page, username, comment_text, image_path=None):
             "button[data-testid='tweetButton']",
             "button[data-testid='tweetButtonInline']",
             "div[role='button'][data-testid='tweetButton']",
-            "button[aria-label='Reply']",
-            "button[aria-label='回复']"
+            "button[aria-label='Reply']"
         ]
         
         reply_send_button = None

@@ -227,9 +227,9 @@ def login_with_credentials(page):
     human_behavior(page)
     
     # 输入邮箱或用户名
-    page.get_by_role("textbox", name="手机号码、邮件地址或用户名").fill(EMAIL)
+    page.get_by_role("textbox", name="Phone, email, or username").fill(EMAIL)
     human_behavior(page)
-    page.get_by_role("textbox", name="手机号码、邮件地址或用户名").press("Enter")
+    page.get_by_role("textbox", name="Phone, email, or username").press("Enter")
     human_behavior(page)
     
     # 如果出现需要输入用户名的情况
@@ -242,7 +242,7 @@ def login_with_credentials(page):
         human_behavior(page)
     
     # 输入密码
-    page.get_by_role("textbox", name="密码 显示密码").click()
+    page.get_by_role("textbox", name="Password").click()
     human_behavior(page)
     
     # 模拟人类输入密码的速度和节奏
@@ -393,9 +393,7 @@ def save_error_data(page, username, error_type):
                     for (let button of buttons) {
                         const ariaLabel = button.getAttribute('aria-label') || '';
                         if (ariaLabel.toLowerCase().includes('photo') || 
-                            ariaLabel.toLowerCase().includes('video') ||
-                            ariaLabel.includes('照片') || 
-                            ariaLabel.includes('视频')) {
+                            ariaLabel.toLowerCase().includes('video')) {
                             button.style.border = '3px solid green';
                         }
                     }
@@ -439,7 +437,7 @@ def save_error_data(page, username, error_type):
                 stats.articles = document.querySelectorAll('article').length;
                 stats.tweets = document.querySelectorAll('article[data-testid="tweet"]').length;
                 stats.divs = document.querySelectorAll('div[data-testid="reply"]').length;
-                stats.buttons = document.querySelectorAll('button[aria-label="Reply"], button[aria-label="回复"]').length;
+                stats.buttons = document.querySelectorAll('button[aria-label="Reply"]').length;
                 
                 // 添加图片上传相关统计
                 stats.toolBars = document.querySelectorAll('[data-testid="toolBar"]').length;
