@@ -15,13 +15,13 @@ TWITTER_CONFIG = {
 
 # 代理配置
 PROXY_CONFIG = {
-    "PROXY": "http://127.0.0.1:7890",  # 要挂代理，否则会出现`httpx.ConnectTimeout` 的问题
+    "PROXY": "socks5://127.0.0.1:7891",  # 要挂代理，否则会出现`httpx.ConnectTimeout` 的问题
     "USE_PROXY": True  # 是否使用代理
 }
 
 # 浏览器配置
 BROWSER_CONFIG = {
-    "HEADLESS": False,  # 是否无头模式（服务器环境必须设置为True）
+    "HEADLESS": True,  # 是否无头模式（服务器环境必须设置为True）
     "VIEWPORT": {'width': 1366, 'height': 768},
     "USER_AGENT": 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36'
 }

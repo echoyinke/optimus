@@ -289,6 +289,13 @@ def setup_browser_and_login(playwright: Playwright):
             '--window-size=1920,1080',
         ]
         
+        # 如果配置了使用代理，则添加代理参数
+        if proxy_config.get("USE_PROXY", False) and proxy_config.get("PROXY"):
+            browser_args.append(f'--proxy-server={proxy_config["PROXY"]}')
+            print(f"🌐 已配置代理: {proxy_config['PROXY']}")
+        else:
+            print("🌐 未使用代理，直接连接")
+        
         browser = playwright.chromium.launch(headless=browser_config["HEADLESS"], channel="chrome", args=browser_args)
         context = browser.new_context(
             viewport=browser_config["VIEWPORT"],
