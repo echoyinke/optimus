@@ -355,6 +355,75 @@ def post_tweet(page, tweet_text, image_paths=None):
         # 等待推文发布完成
         human_behavior(page, 3, 5, True, False)
         
+        # 处理可能出现的弹窗（如安全验证、功能介绍等）
+        try:
+            # 常见的弹窗确认按钮选择器
+            popup_button_selectors = [
+                "button[data-testid='confirmationSheetConfirm']",  # 确认按钮
+                "div[data-testid='confirmationSheetConfirm']",     # 确认按钮（div形式）
+                "button:has-text('Got it')",                       # "Got it" 按钮
+                "button:has-text('Continue')",                     # "Continue" 按钮
+                "button:has-text('OK')",                           # "OK" 按钮
+                "button:has-text('Confirm')",                      # "Confirm" 按钮
+                "button[aria-label*='Continue']",                  # 包含Continue的按钮
+                "button[aria-label*='Got it']",                    # 包含Got it的按钮
+                "div[role='dialog'] button",                       # 对话框中的按钮
+                "div[data-testid='modal'] button"                  # 模态框中的按钮
+            ]
+            
+            # 检查是否有弹窗出现
+            popup_found = False
+            for selector in popup_button_selectors:
+                try:
+                    popup_button = page.locator(selector).first
+                    if popup_button and popup_button.is_visible():
+                        print(f"检测到弹窗，准备点击确认按钮: {selector}")
+                        popup_button.click()
+                        popup_found = True
+                        print("已点击弹窗确认按钮")
+                        human_behavior(page, 1, 2, True, False)
+                        break
+                except Exception:
+                    continue
+            
+            # 如果没有找到标准选择器，尝试使用JavaScript查找和点击
+            if not popup_found:
+                js_result = page.evaluate("""() => {
+                    // 查找包含常见确认文本的按钮
+                    const buttons = document.querySelectorAll('button');
+                    const confirmTexts = ['got it', 'continue', 'ok', 'confirm', 'close', '知道了', '继续', '确认', '关闭'];
+                    
+                    for (const button of buttons) {
+                        const text = (button.textContent || '').toLowerCase().trim();
+                        const ariaLabel = (button.getAttribute('aria-label') || '').toLowerCase();
+                        
+                        for (const confirmText of confirmTexts) {
+                            if (text.includes(confirmText) || ariaLabel.includes(confirmText)) {
+                                // 检查按钮是否在可见的模态框或对话框中
+                                const rect = button.getBoundingClientRect();
+                                if (rect.width > 0 && rect.height > 0) {
+                                    console.log('找到弹窗确认按钮:', text || ariaLabel);
+                                    button.click();
+                                    return {found: true, text: text || ariaLabel};
+                                }
+                            }
+                        }
+                    }
+                    return {found: false};
+                }""")
+                
+                if js_result.get('found'):
+                    popup_found = True
+                    print(f"通过JavaScript找到并点击了弹窗按钮: {js_result.get('text')}")
+                    human_behavior(page, 1, 2, True, False)
+            
+            if not popup_found:
+                print("未检测到需要处理的弹窗")
+                
+        except Exception as e:
+            print(f"处理弹窗时出错: {str(e)}")
+            # 弹窗处理失败不影响主流程，继续执行
+        
         # 检查是否发布成功 - 查找成功提示或URL变化
         success = False
         try:

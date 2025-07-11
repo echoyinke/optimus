@@ -8,6 +8,7 @@ Twitter 自动化脚本主入口
 from playwright.sync_api import sync_playwright
 from .twitter_comment import run_comment_task
 from .twitter_post import run_post_tweet_task
+from .twitter_follow import run_follow_task
 from .twitter_common import ensure_directories
 
 def main():
@@ -21,12 +22,13 @@ def main():
     print("请选择要执行的功能：")
     print("1. 📝 评论功能 - 对指定用户的推文进行评论")
     print("2. 📤 发布功能 - 发布推文（支持文本和图片）")
-    print("3. ❌ 退出程序")
+    print("3. 👥 关注功能 - 批量关注指定用户的关注者")
+    print("4. ❌ 退出程序")
     print("=" * 50)
     
     while True:
         try:
-            choice = input("请输入选项 (1/2/3): ").strip()
+            choice = input("请输入选项 (1/2/3/4): ").strip()
             
             if choice == "1":
                 print("\n🎯 启动评论功能...")
@@ -41,11 +43,17 @@ def main():
                 break
                 
             elif choice == "3":
+                print("\n🎯 启动关注功能...")
+                with sync_playwright() as playwright:
+                    run_follow_task(playwright)
+                break
+                
+            elif choice == "4":
                 print("\n👋 程序已退出，再见！")
                 break
                 
             else:
-                print("❌ 无效选择，请输入 1、2 或 3")
+                print("❌ 无效选择，请输入 1、2、3 或 4")
                 
         except KeyboardInterrupt:
             print("\n\n👋 程序被用户中断，再见！")

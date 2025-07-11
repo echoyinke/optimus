@@ -15,7 +15,7 @@ TWITTER_CONFIG = {
 
 # 代理配置
 PROXY_CONFIG = {
-    "PROXY": "socks5://127.0.0.1:7891",  # 要挂代理，否则会出现`httpx.ConnectTimeout` 的问题
+    "PROXY": "socks5://127.0.0.1:4781",  # 要挂代理，否则会出现`httpx.ConnectTimeout` 的问题
     "USE_PROXY": True  # 是否使用代理
 }
 
@@ -40,8 +40,10 @@ FILE_CONFIG = {
     "USERS_FILE": "inputs/twitter/data/top_users.json",  # 用户列表文件
     "COMMENT_TEXT_FILE": "inputs/twitter/data/comment_text_list.json",  # 评论内容文件
     "TWEET_CONTENT_FILE": "inputs/twitter/data/tweet_content_list.json",  # 推文内容文件
+    "TARGET_USERS_FILE": "inputs/twitter/data/target_users_follow.json",  # 目标用户列表文件（关注功能）
     "COMMENT_PROGRESS_FILE": "outputs/twitter/progress/comment_progress.json",  # 评论进度记录文件
     "TWEET_PROGRESS_FILE": "outputs/twitter/progress/tweet_progress.json",  # 推文进度记录文件
+    "FOLLOW_PROGRESS_FILE": "outputs/twitter/progress/follow_progress.json",  # 关注进度记录文件
 }
 
 # 行为模拟配置
@@ -52,8 +54,12 @@ BEHAVIOR_CONFIG = {
     "COMMENT_DELAY_MAX": 40,  # 评论成功后最大延迟（秒）
     "USER_DELAY_MIN": 5,   # 用户间最小延迟（秒）
     "USER_DELAY_MAX": 15,  # 用户间最大延迟（秒）
-    "TWEET_DELAY_MIN": 60,  # 推文间最小延迟（秒）
-    "TWEET_DELAY_MAX": 180  # 推文间最大延迟（秒）
+    "TWEET_DELAY_MIN": 6,  # 推文间最小延迟（秒）
+    "TWEET_DELAY_MAX": 18,  # 推文间最大延迟（秒）
+    "FOLLOW_DELAY_MIN": 5,   # 关注成功后最小延迟（秒）
+    "FOLLOW_DELAY_MAX": 15,  # 关注成功后最大延迟（秒）
+    "TARGET_USER_DELAY_MIN": 30,  # 目标用户间最小延迟（秒）
+    "TARGET_USER_DELAY_MAX": 60   # 目标用户间最大延迟（秒）
 }
 
 # 获取配置的便捷函数
