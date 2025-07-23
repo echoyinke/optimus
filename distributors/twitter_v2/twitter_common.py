@@ -7,10 +7,15 @@ import os
 import sys
 import pyotp
 import math
-from .config import get_twitter_config, get_proxy_config, get_browser_config, get_file_config, get_directories, get_cookies_file_path
+from .config import get_twitter_config, get_proxy_config, get_browser_config, get_file_config, get_directories, get_cookies_file_path, get_comment_user_config, get_post_user_config
 
-# 从配置文件获取配置信息
-twitter_config = get_twitter_config()
+# 判断当前是评论还是发布功能
+import sys
+if 'twitter_comment' in sys.argv[0] or 'comment' in sys.modules.get('__main__', type('', (), {})()).__file__:
+    twitter_config = get_comment_user_config()
+else:
+    twitter_config = get_post_user_config()
+
 proxy_config = get_proxy_config()
 browser_config = get_browser_config()
 file_config = get_file_config()
@@ -20,6 +25,8 @@ EMAIL = twitter_config["EMAIL"]
 PASSWORD = twitter_config["PASSWORD"]
 TOTP_SECRET = twitter_config["TOTP_SECRET"]
 PROXY = proxy_config["PROXY"]
+
+print(f"[INFO] 当前使用的Twitter账号: {USERNAME}")
 
 def ensure_directories():
     """确保所有必要的目录存在"""

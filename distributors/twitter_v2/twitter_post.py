@@ -525,6 +525,10 @@ def run_post_tweet_task(playwright: Playwright) -> None:
     if not unpublished_tweets:
         print("🎉 所有推文都已发布完成，无需继续发布！")
         return
+
+    # === 新增：随机打乱推文顺序 ===
+    random.shuffle(unpublished_tweets)
+    print("已随机打乱推文发布顺序")
     
     print(f"📝 本次将发布 {len(unpublished_tweets)} 条未发布的推文")
     

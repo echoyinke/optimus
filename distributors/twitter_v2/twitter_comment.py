@@ -273,7 +273,7 @@ def post_comments_to_users(page, users_list, comment_text_list, image_path=None,
             result_detail = {
                 'index': i + 1,
                 'username': username,
-                'comment_text': comment_text[:50] + '...' if len(comment_text) > 50 else comment_text,
+                'comment_text': comment_text[:50] + '...' if len(comment_text) > 200 else comment_text,
                 'success': success,
                 'timestamp': time.strftime("%Y-%m-%d %H:%M:%S")
             }
@@ -344,7 +344,7 @@ def run_comment_task(playwright: Playwright) -> None:
     
     # 从配置文件获取参数
     file_config = get_file_config()
-    users_file = file_config["USERS_FILE"]  # 用户列表文件
+    users_file = file_config["USERS_TO_COMMENT"]  # 评论的目标用户列表文件
     comment_text_file = file_config["COMMENT_TEXT_FILE"]  # 评论内容文件
     
     # 检查必要文件是否存在

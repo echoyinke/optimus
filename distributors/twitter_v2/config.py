@@ -6,11 +6,18 @@ Twitter 自动化脚本配置文件
 """
 
 # Twitter 账号配置
-TWITTER_CONFIG = {
+TWITTER_COMMENT_USER_CONFIG = {
     "USERNAME": "rkzsv53451283",
     "EMAIL": "sweetbrittny1980555@hotmail.com", 
     "PASSWORD": "6DNrmHtSRX0812",
     "TOTP_SECRET": "BUFU53PISNGHZMTS"  # 2FA后的TOTP秘钥
+}
+
+TWITTER_POST_USER_CONFIG = {
+    "USERNAME": "lblpi61994842",
+    "EMAIL": "z8dudcvkh@hotmail.com", 
+    "PASSWORD": "dRVxNALkqz02",
+    "TOTP_SECRET": "AADB52X7FEJ73XIO"  # 2FA后的TOTP秘钥
 }
 
 # 代理配置
@@ -37,7 +44,7 @@ DIRECTORIES = {
 
 # 文件路径配置
 FILE_CONFIG = {
-    "USERS_FILE": "inputs/twitter/data/top_users.json",  # 用户列表文件
+    "USERS_TO_COMMENT": "inputs/twitter/data/top_users.json",  # 评论的目标用户列表文件
     "COMMENT_TEXT_FILE": "inputs/twitter/data/comment_text_list.json",  # 评论内容文件
     "TWEET_CONTENT_FILE": "inputs/twitter/data/tweet_content_list.json",  # 推文内容文件
     "COMMENT_PROGRESS_FILE": "outputs/twitter/progress/comment_progress.json",  # 评论进度记录文件
@@ -80,6 +87,14 @@ def get_file_config():
 def get_behavior_config():
     """获取行为模拟配置"""
     return BEHAVIOR_CONFIG
+
+def get_comment_user_config():
+    """获取评论账号配置"""
+    return TWITTER_COMMENT_USER_CONFIG
+
+def get_post_user_config():
+    """获取发布账号配置"""
+    return TWITTER_POST_USER_CONFIG
 
 def get_cookies_file_path(username=None):
     """获取Cookie文件路径，支持多账号"""

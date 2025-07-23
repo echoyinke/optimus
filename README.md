@@ -37,7 +37,13 @@ poetry install
 ### 2. 运行项目
 ```bash
 # 执行Twitter评论脚本
-poetry run python -m distributors.twitter_v2.twitter_comment
+cd /root/optimus
+
+
+# comment
+nohup env PYTHONUNBUFFERED=1 poetry run python -m distributors.twitter_v2.twitter_comment > /root/optimus/outputs/twitter/logs/twitter_comment.log 2>&1 &
+# post
+nohup env PYTHONUNBUFFERED=1 poetry run python -m distributors.twitter_v2.twitter_post > /root/optimus/outputs/twitter/logs/twitter_post.log 2>&1 &
 ```
 
 ## 项目结构
