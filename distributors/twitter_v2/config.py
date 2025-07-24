@@ -47,8 +47,10 @@ FILE_CONFIG = {
     "USERS_TO_COMMENT": "inputs/twitter/data/top_users.json",  # 评论的目标用户列表文件
     "COMMENT_TEXT_FILE": "inputs/twitter/data/comment_text_list.json",  # 评论内容文件
     "TWEET_CONTENT_FILE": "inputs/twitter/data/tweet_content_list.json",  # 推文内容文件
+    "TARGET_USERS_FILE": "inputs/twitter/data/target_users_follow.json",  # 目标用户列表文件（关注功能）
     "COMMENT_PROGRESS_FILE": "outputs/twitter/progress/comment_progress.json",  # 评论进度记录文件
     "TWEET_PROGRESS_FILE": "outputs/twitter/progress/tweet_progress.json",  # 推文进度记录文件
+    "FOLLOW_PROGRESS_FILE": "outputs/twitter/progress/follow_progress.json",  # 关注进度记录文件
 }
 
 # 行为模拟配置
