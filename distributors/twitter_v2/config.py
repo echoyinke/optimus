@@ -62,7 +62,9 @@ BEHAVIOR_CONFIG = {
     "USER_DELAY_MIN": 5,   # 用户间最小延迟（秒）
     "USER_DELAY_MAX": 15,  # 用户间最大延迟（秒）
     "TWEET_DELAY_MIN": 60,  # 推文间最小延迟（秒）
-    "TWEET_DELAY_MAX": 600  # 推文间最大延迟（秒）
+    "TWEET_DELAY_MAX": 600,  # 推文间最大延迟（秒）
+    "SESSION_GAP_MIN": 60,  # 真实用户模式会话间最小间隔（秒，30分钟）
+    "SESSION_GAP_MAX": 600   # 真实用户模式会话间最大间隔（秒，2小时）
 }
 
 # 获取配置的便捷函数

@@ -496,8 +496,9 @@ def post_multiple_tweets(page, tweets_data, delay_range=None, success_file=None,
     return results
 
 def run_post_tweet_task(playwright: Playwright) -> None:
-    """推文发布功能的主函数"""
-    log_with_timestamp("=== Twitter 推文发布功能 ===", "INFO")
+    """推文发布功能的主函数 - 真实用户模式：for i in n: 登录->发布->退出->等待"""
+    log_with_timestamp("=== Twitter 推文发布功能（真实用户模式）===", "INFO")
+    log_with_timestamp("🎭 每发布1条推文后关闭浏览器，等待30分钟-2小时后重新登录发布下一条", "INFO")
     
     # 确保所有必要的目录存在
     ensure_directories()
@@ -532,50 +533,195 @@ def run_post_tweet_task(playwright: Playwright) -> None:
     random.shuffle(unpublished_tweets)
     log_with_timestamp("已随机打乱推文发布顺序", "INFO")
     
-    log_with_timestamp(f"📝 本次将发布 {len(unpublished_tweets)} 条未发布的推文", "INFO")
+    log_with_timestamp(f"📝 待发布推文总数: {len(unpublished_tweets)} 条", "INFO")
     
-    # 设置浏览器并登录
-    browser, context, page = setup_browser_and_login(playwright)
-    if not all([browser, context, page]):
-        log_with_timestamp("❌ 无法设置浏览器或登录，退出程序", "ERROR")
-        return
+    # 从配置文件获取会话间隔设置
+    behavior_config = get_behavior_config()
+    session_gap_min = behavior_config["SESSION_GAP_MIN"]  # 默认30分钟
+    session_gap_max = behavior_config["SESSION_GAP_MAX"]  # 默认2小时
+    
+    log_with_timestamp(f"🎭 采用真实用户模式：每发布1条后关闭浏览器，等待{session_gap_min//60}-{session_gap_max//60}分钟", "INFO")
+    
+    # 准备统计信息
+    total_tweets = len(tweet_contents)
+    initial_published = len(published_tweets)
+    
+    # 准备实时保存的结果文件
+    from .config import get_directories_with_date
+    task_type = "post"
+    date_directories = get_directories_with_date(task_type)
+    results_dir = date_directories["RESULTS_DIR"]
+    
+    # 创建总体发布结果记录
+    overall_results = {
+        'start_time': time.strftime("%Y-%m-%d %H:%M:%S"),
+        'total_tweets': len(unpublished_tweets),
+        'results': [],
+        'success_count': 0,
+        'failed_count': 0
+    }
     
     try:
-        # 登录成功后，开始批量发布推文
-        human_behavior(page, 3, 6, True, True)
+        # 循环发布每条推文：for i in n: 登录 -> 发布 -> 退出
+        for i, tweet_data in enumerate(unpublished_tweets):
+            log_with_timestamp(f"\n🔄 ======== 第 {i+1}/{len(unpublished_tweets)} 条推文 ========", "INFO")
+            
+            tweet_text = tweet_data.get('text', '')
+            tweet_images = tweet_data.get('images', [])
+            
+            log_with_timestamp(f"📝 推文内容: {tweet_text[:50]}{'...' if len(tweet_text) > 50 else ''}", "INFO")
+            if tweet_images:
+                log_with_timestamp(f"📸 包含图片: {len(tweet_images)} 张", "INFO")
+            
+            # 每次都重新启动浏览器和登录
+            log_with_timestamp("🌐 启动新的浏览器会话...", "INFO")
+            browser, context, page = setup_browser_and_login(playwright)
+            
+            if not all([browser, context, page]):
+                log_with_timestamp("❌ 无法设置浏览器或登录，跳过此条推文", "ERROR")
+                
+                # 记录失败结果
+                result = {
+                    'index': i + 1,
+                    'text': tweet_text,
+                    'image_count': len(tweet_images),
+                    'timestamp': time.strftime("%Y-%m-%d %H:%M:%S"),
+                    'success': False,
+                    'error': "浏览器设置或登录失败"
+                }
+                overall_results['results'].append(result)
+                overall_results['failed_count'] += 1
+                continue
+            
+            try:
+                # 登录成功，开始发布
+                log_with_timestamp("✅ 登录成功，准备发布推文", "SUCCESS")
+                human_behavior(page, 3, 6, True, True)
+                
+                # 发布推文
+                success = post_tweet(page, tweet_text, tweet_images)
+                
+                # 准备结果数据
+                result = {
+                    'index': i + 1,
+                    'text': tweet_text,
+                    'image_count': len(tweet_images),
+                    'timestamp': time.strftime("%Y-%m-%d %H:%M:%S"),
+                    'success': success,
+                    'error': None if success else "发布失败"
+                }
+                
+                if success:
+                    log_with_timestamp("✅ 推文发布成功！", "SUCCESS")
+                    
+                    # 保存到已发布记录
+                    published_data = {
+                        'text': tweet_text,
+                        'images': tweet_images,
+                        'timestamp': time.strftime("%Y-%m-%d %H:%M:%S")
+                    }
+                    append_published_tweet(tweet_progress_file, published_data)
+                    log_with_timestamp("💾 推文记录已保存", "INFO")
+                    
+                    # 模拟真实用户：简单浏览一下
+                    log_with_timestamp("👀 模拟真实用户：浏览主页", "INFO")
+                    human_behavior(page, 5, 15, True, True)
+                    
+                    overall_results['success_count'] += 1
+                else:
+                    log_with_timestamp("❌ 推文发布失败", "ERROR")
+                    overall_results['failed_count'] += 1
+                
+                # 记录结果
+                overall_results['results'].append(result)
+                
+                # 显示当前进度
+                current_published = initial_published + overall_results['success_count']
+                remaining_count = len(unpublished_tweets) - i - 1
+                
+                log_with_timestamp(f"\n📈 当前进度统计:", "INFO")
+                log_with_timestamp(f"✅ 已发布: {current_published}/{total_tweets} 条", "SUCCESS")
+                log_with_timestamp(f"📝 本轮剩余: {remaining_count} 条", "INFO")
+                
+            except Exception as e:
+                log_with_timestamp(f"❌ 发布过程中出错: {str(e)}", "ERROR")
+                
+                # 记录失败结果
+                result = {
+                    'index': i + 1,
+                    'text': tweet_text,
+                    'image_count': len(tweet_images),
+                    'timestamp': time.strftime("%Y-%m-%d %H:%M:%S"),
+                    'success': False,
+                    'error': str(e)
+                }
+                overall_results['results'].append(result)
+                overall_results['failed_count'] += 1
+                
+            finally:
+                # 每次都关闭浏览器（模拟真实用户离开）
+                log_with_timestamp("🚪 关闭浏览器会话", "INFO")
+                try:
+                    context.close()
+                    browser.close()
+                except:
+                    pass
+            
+            # 如果不是最后一条推文，等待下次会话
+            if i < len(unpublished_tweets) - 1:
+                gap_seconds = random.randint(session_gap_min, session_gap_max)
+                gap_minutes = gap_seconds // 60
+                
+                log_with_timestamp(f"🕒 模拟真实用户行为：等待 {gap_minutes} 分钟后重新登录", "INFO")
+                log_with_timestamp(f"💤 期间可以做其他事情，程序会自动继续...", "INFO")
+                
+                # 显示等待进度
+                remaining = gap_seconds
+                while remaining > 0:
+                    if remaining >= 600:  # 大于10分钟
+                        time.sleep(600)
+                        remaining -= 600
+                        log_with_timestamp(f"⏳ 还需等待 {remaining//60} 分钟...", "INFO")
+                    elif remaining >= 60:  # 大于1分钟
+                        time.sleep(60)
+                        remaining -= 60
+                        if remaining >= 60:
+                            log_with_timestamp(f"⏳ 还需等待 {remaining//60} 分钟...", "INFO")
+                    else:  # 最后1分钟
+                        time.sleep(remaining)
+                        remaining = 0
+                
+                log_with_timestamp("🔄 等待完成，准备下一轮发布", "SUCCESS")
         
-        log_with_timestamp(f"\n📤 开始批量发布 {len(unpublished_tweets)} 条推文...", "INFO")
-        behavior_config = get_behavior_config()
-        log_with_timestamp(f"⏱️ 推文间隔设置为 {behavior_config['TWEET_DELAY_MIN']}-{behavior_config['TWEET_DELAY_MAX']} 秒", "INFO")
-        log_with_timestamp(f"💾 成功发布的推文将实时保存到: {tweet_progress_file}", "INFO")
+        # 保存总体发布结果
+        overall_results['end_time'] = time.strftime("%Y-%m-%d %H:%M:%S")
+        result_filename = os.path.join(results_dir, f"tweet_batch_results_{time.strftime('%H%M%S')}.json")
         
-        # 准备实时保存的结果文件
-        from .config import get_directories_with_date
+        with open(result_filename, 'w', encoding='utf-8') as f:
+            json.dump(overall_results, f, ensure_ascii=False, indent=2)
         
-        # 判断当前任务类型
-        task_type = "post"
-        date_directories = get_directories_with_date(task_type)
-        results_dir = date_directories["RESULTS_DIR"]
+        log_with_timestamp(f"📊 总体发布结果已保存到: {result_filename}", "INFO")
         
-        result_filename = os.path.join(results_dir, f"tweet_results_{time.strftime('%H%M%S')}.json")
-        log_with_timestamp(f"📊 发布结果将实时保存到: {result_filename}", "INFO")
+        log_with_timestamp(f"\n🎉 真实用户模式发布完成！", "SUCCESS")
+        log_with_timestamp(f"📊 总结: 成功 {overall_results['success_count']} 条, 失败 {overall_results['failed_count']} 条", "INFO")
         
-        # 使用配置文件中的延迟设置，并传入成功记录文件路径和结果文件路径
-        results = post_multiple_tweets(page, unpublished_tweets, success_file=tweet_progress_file, results_file=result_filename)
+    except KeyboardInterrupt:
+        log_with_timestamp("\n⏹️ 用户中断了发布任务", "WARNING")
+        log_with_timestamp(f"📊 已完成: 成功 {overall_results['success_count']} 条, 失败 {overall_results['failed_count']} 条", "INFO")
         
-        log_with_timestamp(f"\n📊 批量发布结果：", "INFO")
-        log_with_timestamp(f"✅ 成功: {results['success']} 条", "SUCCESS")
-        log_with_timestamp(f"❌ 失败: {results['failed']} 条", "ERROR")
+        # 保存中断时的结果
+        overall_results['end_time'] = time.strftime("%Y-%m-%d %H:%M:%S")
+        overall_results['interrupted'] = True
+        result_filename = os.path.join(results_dir, f"tweet_interrupted_results_{time.strftime('%H%M%S')}.json")
         
-        log_with_timestamp(f"\n🎉 推文发布任务完成！", "INFO")
+        with open(result_filename, 'w', encoding='utf-8') as f:
+            json.dump(overall_results, f, ensure_ascii=False, indent=2)
         
+        log_with_timestamp(f"📊 中断时的结果已保存到: {result_filename}", "INFO")
+    
     except Exception as e:
-        log_with_timestamp(f"❌ 推文发布过程中出现错误: {str(e)}", "ERROR")
-        log_with_timestamp(f"💡 提示: 已成功发布的推文已保存，发布结果已实时保存，可以重新运行程序继续发布", "INFO")
-    finally:
-        # 清理资源
-        context.close()
-        browser.close()
+        log_with_timestamp(f"❌ 发布过程中出现错误: {str(e)}", "ERROR")
+        log_with_timestamp(f"📊 已完成: 成功 {overall_results['success_count']} 条, 失败 {overall_results['failed_count']} 条", "INFO")
 
 if __name__ == "__main__":
     with sync_playwright() as playwright:
