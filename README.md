@@ -41,9 +41,9 @@ cd /root/optimus
 
 
 # comment
-nohup env PYTHONUNBUFFERED=1 poetry run python -m distributors.twitter_v2.twitter_comment > /root/optimus/outputs/twitter/logs/twitter_comment.log 2>&1 &
-# post
-nohup env PYTHONUNBUFFERED=1 poetry run python -m distributors.twitter_v2.twitter_post > /root/optimus/outputs/twitter/logs/twitter_post.log 2>&1 &
+nohup env PYTHONUNBUFFERED=1 poetry run python -m distributors.twitter_v2.twitter_comment > /root/optimus/outputs/twitter/logs/comment/$(date +"%Y-%m-%d")/twitter_comment.log 2>&1 &
+# post  
+nohup env PYTHONUNBUFFERED=1 poetry run python -m distributors.twitter_v2.twitter_post > /root/optimus/outputs/twitter/logs/post/$(date +"%Y-%m-%d")/twitter_post.log 2>&1 &
 ```
 
 ## 项目结构

@@ -7,7 +7,8 @@ from .twitter_common import (
     human_behavior, 
     setup_browser_and_login, 
     save_error_data,
-    ensure_directories
+    ensure_directories,
+    log_with_timestamp
 )
 from .config import get_file_config, get_behavior_config
 
@@ -24,11 +25,11 @@ def load_users_from_file(filename):
                 if isinstance(item, dict) and 'screen_name' in item:
                     users.append(item['screen_name'])
         
-        print(f"从JSON文件 {filename} 成功提取了 {len(users)} 个用户名")
+        log_with_timestamp(f"从JSON文件 {filename} 成功提取了 {len(users)} 个用户名", "SUCCESS")
         return users
     
     except Exception as e:
-        print(f"加载JSON文件时出错: {e}")
+        log_with_timestamp(f"加载JSON文件时出错: {e}", "ERROR")
         return []
 
 def post_comment(page, username, comment_text, image_path=None):
@@ -44,7 +45,7 @@ def post_comment(page, username, comment_text, image_path=None):
     返回:
     - bool: 评论是否成功
     """
-    print(f"正在访问用户 {username} 的主页：https://twitter.com/{username}...")
+    log_with_timestamp(f"正在访问用户 {username} 的主页：https://twitter.com/{username}...", "INFO")
     
     try:
         # 访问用户主页
@@ -65,11 +66,11 @@ def post_comment(page, username, comment_text, image_path=None):
             temp_tweet = page.locator(selector).first
             if temp_tweet and temp_tweet.is_visible():
                 first_tweet = temp_tweet
-                print(f"找到第一条推文：{selector}")
+                log_with_timestamp(f"找到第一条推文：{selector}", "SUCCESS")
                 break
         
         if not first_tweet:
-            print(f"无法在 {username} 的主页上找到推文")
+            log_with_timestamp(f"无法在 {username} 的主页上找到推文", "ERROR")
             save_error_data(page, username, "no_tweet_found")
             return False
         
@@ -121,21 +122,21 @@ def post_comment(page, username, comment_text, image_path=None):
                 }""", tweet_selectors[0])  # 使用找到推文的选择器
                 
                 if found:
-                    print("通过JavaScript成功找到并点击了回复按钮")
+                    log_with_timestamp("通过JavaScript成功找到并点击了回复按钮", "SUCCESS")
                     human_behavior(page, 2, 3)
                     # 不再需要点击reply_button，因为JavaScript已经点击了
                     reply_clicked = True
                 else:
-                    print("JavaScript也无法找到回复按钮")
+                    log_with_timestamp("JavaScript也无法找到回复按钮", "ERROR")
                     save_error_data(page, username, "no_reply_button_js")
                     return False
             except Exception as e:
-                print(f"JavaScript查找回复按钮时出错: {str(e)}")
+                log_with_timestamp(f"JavaScript查找回复按钮时出错: {str(e)}", "ERROR")
                 # 继续使用常规方法
         
         # 检查回复按钮状态
         if not reply_button and not reply_clicked:
-            print(f"找不到回复按钮")
+            log_with_timestamp(f"找不到回复按钮", "ERROR")
             save_error_data(page, username, "no_reply_button")
             return False
             
@@ -156,11 +157,11 @@ def post_comment(page, username, comment_text, image_path=None):
             temp_box = page.locator(selector).first
             if temp_box and temp_box.is_visible():
                 comment_box = temp_box
-                print(f"找到评论框：{selector}")
+                log_with_timestamp(f"找到评论框：{selector}", "SUCCESS")
                 break
         
         if not comment_box:
-            print("找不到评论输入框")
+            log_with_timestamp("找不到评论输入框", "ERROR")
             save_error_data(page, username, "no_comment_box")
             return False
             
@@ -196,7 +197,7 @@ def post_comment(page, username, comment_text, image_path=None):
                 file_input.set_input_files(image_path)
                 human_behavior(page, 2, 4)
             else:
-                print("找不到图片上传按钮")
+                log_with_timestamp("找不到图片上传按钮", "WARNING")
         
         # 点击回复按钮发送评论 - 使用更新的选择器
         reply_send_button_selectors = [
@@ -216,10 +217,10 @@ def post_comment(page, username, comment_text, image_path=None):
         
         # 点击发送按钮
         if reply_send_button and reply_send_button is not True:
-            print("找到发送按钮并点击")
+            log_with_timestamp("找到发送按钮并点击", "INFO")
             reply_send_button.click()
         else:
-            print("找不到发送按钮")
+            log_with_timestamp("找不到发送按钮", "ERROR")
             save_error_data(page, username, "no_send_button")
             return False
         
@@ -230,15 +231,15 @@ def post_comment(page, username, comment_text, image_path=None):
         success = True  # 默认假设成功
         
         if success:
-            print(f"成功对 {username} 的推文发表评论")
+            log_with_timestamp(f"成功对 {username} 的推文发表评论", "SUCCESS")
         else:
-            print(f"评论可能未成功发送")
+            log_with_timestamp(f"评论可能未成功发送", "WARNING")
             save_error_data(page, username, "send_failed")
             
         return success
         
     except Exception as e:
-        print(f"在 {username} 的主页发表评论时出错: {str(e)}")
+        log_with_timestamp(f"在 {username} 的主页发表评论时出错: {str(e)}", "ERROR")
         save_error_data(page, username, f"exception_{str(e).replace(' ', '_')[:30]}")
         return False
 
@@ -267,7 +268,7 @@ def post_comments_to_users(page, users_list, comment_text_list, image_path=None,
         # 有放回的随机选择
         comment_text = random.choice(comment_text_list)
         try:
-            print(f"准备对用户 {username} 发表评论...")
+            log_with_timestamp(f"准备对用户 {username} 发表评论...", "INFO")
             success = post_comment(page, username, comment_text, image_path)
             
             result_detail = {
@@ -282,7 +283,7 @@ def post_comments_to_users(page, users_list, comment_text_list, image_path=None,
             
             if success:
                 results['success'] += 1
-                print(f"成功评论 {username} 的推文 ({results['success']}/{len(users_list)})")
+                log_with_timestamp(f"成功评论 {username} 的推文 ({results['success']}/{len(users_list)})", "SUCCESS")
                 comment_progress_info.append({
                     "username": username,
                     "comment_text": comment_text,
@@ -297,7 +298,7 @@ def post_comments_to_users(page, users_list, comment_text_list, image_path=None,
                 human_behavior(page, behavior_config["COMMENT_DELAY_MIN"], behavior_config["COMMENT_DELAY_MAX"], True, True)
             else:
                 results['failed'] += 1
-                print(f"评论 {username} 的推文失败 ({results['failed']} 失败)")
+                log_with_timestamp(f"评论 {username} 的推文失败 ({results['failed']} 失败)", "ERROR")
             
             # 实时保存评论结果
             if results_file:
@@ -310,7 +311,7 @@ def post_comments_to_users(page, users_list, comment_text_list, image_path=None,
             
         except Exception as e:
             results['failed'] += 1
-            print(f"处理用户 {username} 时出错: {e}")
+            log_with_timestamp(f"处理用户 {username} 时出错: {e}", "ERROR")
             results['details'].append({
                 'index': i + 1,
                 'username': username,
@@ -327,17 +328,17 @@ def post_comments_to_users(page, users_list, comment_text_list, image_path=None,
             
             human_behavior(page, 5, 10)
     
-    print(f"批量评论完成: 成功 {results['success']} 个用户, 失败 {results['failed']} 个用户")
+    log_with_timestamp(f"批量评论完成: 成功 {results['success']} 个用户, 失败 {results['failed']} 个用户", "INFO")
     
     # 最终保存评论结果到统一目录
     if results_file:
-        print(f"评论结果已实时保存到: {results_file}")
+        log_with_timestamp(f"评论结果已实时保存到: {results_file}", "INFO")
     
     return results
 
 def run_comment_task(playwright: Playwright) -> None:
     """评论功能测试的主函数"""
-    print("=== Twitter 评论功能测试 ===")
+    log_with_timestamp("=== Twitter 评论功能测试 ===", "INFO")
     
     # 确保所有必要的目录存在
     ensure_directories()
@@ -349,7 +350,7 @@ def run_comment_task(playwright: Playwright) -> None:
     
     # 检查必要文件是否存在
     if not os.path.exists(comment_text_file):
-        print(f"❌ 评论内容文件不存在: {comment_text_file}")
+        log_with_timestamp(f"❌ 评论内容文件不存在: {comment_text_file}", "ERROR")
         return
     
     # 夸赞的评论
@@ -359,7 +360,7 @@ def run_comment_task(playwright: Playwright) -> None:
     # 加载用户列表
     users = load_users_from_file(users_file)
     if not users:
-        print(f"❌ 用户列表为空或无法加载文件 {users_file}")
+        log_with_timestamp(f"❌ 用户列表为空或无法加载文件 {users_file}", "ERROR")
         return
     
     # 加载已成功评论的用户列表
@@ -375,14 +376,14 @@ def run_comment_task(playwright: Playwright) -> None:
     # 过滤掉已经评论过的用户
     users = [user for user in users if user not in comment_progress_users]
     
-    print(f"📊 已加载 {len(users)} 个待评论用户")
+    log_with_timestamp(f"📊 已加载 {len(users)} 个待评论用户", "INFO")
     if image_path:
-        print(f"🖼️ 图片路径: {image_path}")
+        log_with_timestamp(f"🖼️ 图片路径: {image_path}", "INFO")
     
     # 设置浏览器并登录
     browser, context, page = setup_browser_and_login(playwright)
     if not all([browser, context, page]):
-        print("❌ 无法设置浏览器或登录，退出程序")
+        log_with_timestamp("❌ 无法设置浏览器或登录，退出程序", "ERROR")
         return
     
     try:
@@ -390,24 +391,27 @@ def run_comment_task(playwright: Playwright) -> None:
         human_behavior(page, 3, 6, True, True)
         
         # 准备实时保存的结果文件
-        from .config import get_directories
-        directories = get_directories()
-        results_dir = directories["RESULTS_DIR"]
+        from .config import get_directories_with_date
         
-        result_filename = os.path.join(results_dir, f"comment_results_{time.strftime('%Y%m%d_%H%M%S')}.json")
-        print(f"💾 评论结果将实时保存到: {result_filename}")
+        # 判断当前任务类型
+        task_type = "comment"
+        date_directories = get_directories_with_date(task_type)
+        results_dir = date_directories["RESULTS_DIR"]
+        
+        result_filename = os.path.join(results_dir, f"comment_results_{time.strftime('%H%M%S')}.json")
+        log_with_timestamp(f"💾 评论结果将实时保存到: {result_filename}", "INFO")
         
         results = post_comments_to_users(page, users, comment_text_list, image_path, comment_progress_info, result_filename)
         
-        print(f"\n📊 批量评论结果：")
-        print(f"✅ 成功: {results['success']} 个用户")
-        print(f"❌ 失败: {results['failed']} 个用户")
+        log_with_timestamp(f"\n📊 批量评论结果：", "INFO")
+        log_with_timestamp(f"✅ 成功: {results['success']} 个用户", "SUCCESS")
+        log_with_timestamp(f"❌ 失败: {results['failed']} 个用户", "ERROR")
         
-        print("🎉 评论任务完成！")
+        log_with_timestamp("🎉 评论任务完成！", "INFO")
         
     except Exception as e:
-        print(f"❌ 评论任务执行过程中出错: {str(e)}")
-        print(f"💡 提示: 已完成的评论结果已实时保存，可以查看结果文件")
+        log_with_timestamp(f"❌ 评论任务执行过程中出错: {str(e)}", "ERROR")
+        log_with_timestamp(f"💡 提示: 已完成的评论结果已实时保存，可以查看结果文件", "INFO")
     finally:
         # 清理资源
         context.close()

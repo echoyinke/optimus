@@ -7,14 +7,20 @@ import os
 import sys
 import pyotp
 import math
-from .config import get_twitter_config, get_proxy_config, get_browser_config, get_file_config, get_directories, get_cookies_file_path, get_comment_user_config, get_post_user_config
+from datetime import datetime
+from .config import get_twitter_config, get_proxy_config, get_browser_config, get_file_config, get_directories, get_directories_with_date, get_cookies_file_path, get_comment_user_config, get_post_user_config
 
 # 判断当前是评论还是发布功能
 import sys
-if 'twitter_comment' in sys.argv[0] or 'comment' in sys.modules.get('__main__', type('', (), {})()).__file__:
+try:
+    main_file = getattr(sys.modules.get('__main__', type('', (), {})()), '__file__', '')
+    if 'twitter_comment' in sys.argv[0] or 'comment' in main_file:
+        twitter_config = get_comment_user_config()
+    else:
+        twitter_config = get_post_user_config()
+except:
+    # 默认使用评论配置
     twitter_config = get_comment_user_config()
-else:
-    twitter_config = get_post_user_config()
 
 proxy_config = get_proxy_config()
 browser_config = get_browser_config()
@@ -26,15 +32,46 @@ PASSWORD = twitter_config["PASSWORD"]
 TOTP_SECRET = twitter_config["TOTP_SECRET"]
 PROXY = proxy_config["PROXY"]
 
-print(f"[INFO] 当前使用的Twitter账号: {USERNAME}")
+def log_with_timestamp(message, level="INFO"):
+    """带时间戳的日志输出函数
+    
+    参数:
+    - message: 日志消息
+    - level: 日志级别 (INFO, ERROR, WARNING, SUCCESS)
+    """
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    level_emoji = {
+        "INFO": "ℹ️",
+        "ERROR": "❌", 
+        "WARNING": "⚠️",
+        "SUCCESS": "✅",
+        "DEBUG": "🔧"
+    }
+    emoji = level_emoji.get(level, "📝")
+    print(f"[{timestamp}] {emoji} [{level}] {message}")
+
+# 输出当前使用的账号信息
+log_with_timestamp(f"当前使用的Twitter账号: {USERNAME}", "INFO")
 
 def ensure_directories():
     """确保所有必要的目录存在"""
+    # 确保基础目录存在
     directories = get_directories()
     for dir_name, dir_path in directories.items():
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
-            print(f"📁 已创建目录: {dir_path}")
+            log_with_timestamp(f"已创建目录: {dir_path}", "INFO")
+    
+    # 判断当前任务类型
+    task_type = "comment" if twitter_config == get_comment_user_config() else "post"
+    
+    # 确保带日期和任务类型的目录存在
+    date_directories = get_directories_with_date(task_type)
+    for dir_name, dir_path in date_directories.items():
+        if dir_name in ["ERROR_HTML_DIR", "LOGS_DIR", "RESULTS_DIR"]:  # 创建需要按日期分类的目录
+            if not os.path.exists(dir_path):
+                os.makedirs(dir_path)
+                log_with_timestamp(f"已创建日期目录: {dir_path}", "INFO")
 
 def human_behavior(page=None, min_sec=2, max_sec=5, mouse_move=True, scroll=True):
     """
@@ -208,7 +245,7 @@ def save_cookies(context, username=None, filename=None):
     cookies = context.cookies()
     with open(filename, "w") as f:
         json.dump(cookies, f)
-    print(f"🍪 Cookies 已保存到 {filename}")
+    log_with_timestamp(f"Cookies 已保存到 {filename}", "SUCCESS")
 
 def load_cookies(context, username=None, filename=None):
     """从文件加载 cookies，支持多账号"""
@@ -219,13 +256,13 @@ def load_cookies(context, username=None, filename=None):
         with open(filename, "r") as f:
             cookies = json.load(f)
         context.add_cookies(cookies)
-        print(f"🍪 已加载 Cookies 从 {filename}")
+        log_with_timestamp(f"已加载 Cookies 从 {filename}", "SUCCESS")
         return True
     except FileNotFoundError:
-        print(f"🍪 未找到 Cookies 文件: {filename}")
+        log_with_timestamp(f"未找到 Cookies 文件: {filename}", "WARNING")
         return False
     except Exception as e:
-        print(f"❌ 加载 Cookies 时出错: {e}")
+        log_with_timestamp(f"加载 Cookies 时出错: {e}", "ERROR")
         return False
 
 def login_with_credentials(page):
@@ -263,7 +300,7 @@ def login_with_credentials(page):
     
     # 使用pyotp生成验证码
     verification_code = pyotp.TOTP(TOTP_SECRET).now()
-    print(f"生成的TOTP验证码: {verification_code}")
+    log_with_timestamp(f"生成的TOTP验证码: {verification_code}", "INFO")
     
     # 输入验证码，模拟人类输入
     for char in verification_code:
@@ -299,9 +336,9 @@ def setup_browser_and_login(playwright: Playwright):
         # 如果配置了使用代理，则添加代理参数
         if proxy_config.get("USE_PROXY", False) and proxy_config.get("PROXY"):
             browser_args.append(f'--proxy-server={proxy_config["PROXY"]}')
-            print(f"🌐 已配置代理: {proxy_config['PROXY']}")
+            log_with_timestamp(f"已配置代理: {proxy_config['PROXY']}", "INFO")
         else:
-            print("🌐 未使用代理，直接连接")
+            log_with_timestamp("未使用代理，直接连接", "INFO")
         
         browser = playwright.chromium.launch(headless=browser_config["HEADLESS"], channel="chrome", args=browser_args)
         context = browser.new_context(
@@ -342,19 +379,19 @@ def setup_browser_and_login(playwright: Playwright):
             
             # 检查是否需要重新登录
             if page.url.startswith("https://twitter.com/i/flow/login"):
-                print("Cookies 已过期，需要重新登录")
+                log_with_timestamp("Cookies 已过期，需要重新登录", "WARNING")
                 login_with_credentials(page)
             else:
-                print("使用 Cookies 成功登录")
+                log_with_timestamp("使用 Cookies 成功登录", "SUCCESS")
         else:
             # 如果没有 cookies，使用账号密码登录
             login_with_credentials(page)
         
-        print("✅ 浏览器设置和登录完成")
+        log_with_timestamp("浏览器设置和登录完成", "SUCCESS")
         return browser, context, page
         
     except Exception as e:
-        print(f"❌ 浏览器设置或登录失败: {str(e)}")
+        log_with_timestamp(f"浏览器设置或登录失败: {str(e)}", "ERROR")
         return None, None, None
 
 def save_error_data(page, username, error_type):
@@ -367,15 +404,18 @@ def save_error_data(page, username, error_type):
     - error_type: 错误类型描述
     """
     try:
-        # 创建error_html文件夹(如果不存在)
-        directories = get_directories()
-        error_dir = directories["ERROR_HTML_DIR"]
+        # 判断当前任务类型
+        task_type = "comment" if twitter_config == get_comment_user_config() else "post"
+        
+        # 创建带日期和任务类型的error_html文件夹(如果不存在)
+        date_directories = get_directories_with_date(task_type)
+        error_dir = date_directories["ERROR_HTML_DIR"]
         if not os.path.exists(error_dir):
             os.makedirs(error_dir)
-            print(f"已创建{error_dir}文件夹")
+            log_with_timestamp(f"已创建错误目录: {error_dir}", "INFO")
         
-        # 生成带有时间戳的文件名前缀
-        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        # 生成带有时间戳的文件名前缀（只保留时间部分，日期已在路径中）
+        timestamp = time.strftime("%H%M%S")
         file_prefix = f"{error_dir}/{timestamp}_{username}_{error_type}"
         
         # 如果是回复按钮错误，添加高亮
@@ -425,14 +465,14 @@ def save_error_data(page, username, error_type):
         # 保存截图
         screenshot_path = f"{file_prefix}.png"
         page.screenshot(path=screenshot_path)
-        print(f"已保存页面截图到: {screenshot_path}")
+        log_with_timestamp(f"已保存页面截图到: {screenshot_path}", "INFO")
         
         # 保存完整的HTML内容
         html_path = f"{file_prefix}.html"
         html_content = page.content()
         with open(html_path, 'w', encoding='utf-8') as f:
             f.write(html_content)
-        print(f"已保存HTML内容到: {html_path}")
+        log_with_timestamp(f"已保存HTML内容到: {html_path}", "INFO")
         
         # 保存页面URL和当前时间
         info_path = f"{file_prefix}_info.txt"
@@ -464,10 +504,10 @@ def save_error_data(page, username, error_type):
             for key, value in elements_stats.items():
                 f.write(f"  {key}: {value}\n")
         
-        print(f"已保存调试信息到: {info_path}")
+        log_with_timestamp(f"已保存调试信息到: {info_path}", "INFO")
     
     except Exception as e:
-        print(f"保存错误数据时出现问题: {str(e)}")
+        log_with_timestamp(f"保存错误数据时出现问题: {str(e)}", "ERROR")
 
 
 
@@ -488,15 +528,15 @@ def handle_file_upload_dialog(page, image_paths=None, timeout=10000):
             """处理文件选择器"""
             try:
                 if image_paths and len(image_paths) > 0:
-                    print(f"文件选择对话框已打开，准备上传 {len(image_paths)} 个文件")
+                    log_with_timestamp(f"文件选择对话框已打开，准备上传 {len(image_paths)} 个文件", "INFO")
                     file_chooser.set_files(image_paths)
-                    print("文件已设置到选择器")
+                    log_with_timestamp("文件已设置到选择器", "SUCCESS")
                 else:
-                    print("取消文件选择对话框")
+                    log_with_timestamp("取消文件选择对话框", "INFO")
                     # 通过设置空列表来取消选择
                     file_chooser.set_files([])
             except Exception as e:
-                print(f"处理文件选择器时出错: {str(e)}")
+                log_with_timestamp(f"处理文件选择器时出错: {str(e)}", "ERROR")
         
         # 设置文件选择器监听器
         page.on("filechooser", handle_file_chooser)
@@ -504,10 +544,10 @@ def handle_file_upload_dialog(page, image_paths=None, timeout=10000):
         # 等待文件选择器事件或超时
         try:
             page.wait_for_event("filechooser", timeout=timeout)
-            print("文件选择器事件已处理")
+            log_with_timestamp("文件选择器事件已处理", "SUCCESS")
             return True
         except Exception as e:
-            print(f"等待文件选择器超时或出错: {str(e)}")
+            log_with_timestamp(f"等待文件选择器超时或出错: {str(e)}", "WARNING")
             return False
         finally:
             # 移除监听器
@@ -517,7 +557,7 @@ def handle_file_upload_dialog(page, image_paths=None, timeout=10000):
                 pass
                 
     except Exception as e:
-        print(f"处理文件上传对话框时出错: {str(e)}")
+        log_with_timestamp(f"处理文件上传对话框时出错: {str(e)}", "ERROR")
         return False
 
 def cancel_file_upload_dialog(page):
@@ -533,16 +573,16 @@ def cancel_file_upload_dialog(page):
     try:
         # 尝试按ESC键取消对话框
         page.keyboard.press("Escape")
-        print("已按ESC键尝试取消文件对话框")
+        log_with_timestamp("已按ESC键尝试取消文件对话框", "INFO")
         
         # 等待一下让对话框关闭
         time.sleep(1)
         
         # 也可以尝试点击页面其他地方来取消
         page.click("body")
-        print("已点击页面其他区域尝试取消对话框")
+        log_with_timestamp("已点击页面其他区域尝试取消对话框", "INFO")
         
         return True
     except Exception as e:
-        print(f"取消文件上传对话框时出错: {str(e)}")
+        log_with_timestamp(f"取消文件上传对话框时出错: {str(e)}", "ERROR")
         return False 

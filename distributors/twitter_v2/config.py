@@ -60,7 +60,7 @@ BEHAVIOR_CONFIG = {
     "USER_DELAY_MIN": 5,   # 用户间最小延迟（秒）
     "USER_DELAY_MAX": 15,  # 用户间最大延迟（秒）
     "TWEET_DELAY_MIN": 60,  # 推文间最小延迟（秒）
-    "TWEET_DELAY_MAX": 180  # 推文间最大延迟（秒）
+    "TWEET_DELAY_MAX": 600  # 推文间最大延迟（秒）
 }
 
 # 获取配置的便捷函数
@@ -79,6 +79,25 @@ def get_browser_config():
 def get_directories():
     """获取目录配置"""
     return DIRECTORIES
+
+def get_directories_with_date(task_type="comment"):
+    """获取带日期和任务类型的目录配置
+    
+    参数:
+    - task_type: 任务类型，"comment" 或 "post"
+    """
+    from datetime import datetime
+    
+    # 获取当前日期，格式：YYYY-MM-DD
+    current_date = datetime.now().strftime("%Y-%m-%d")
+    
+    # 创建带日期和任务类型的目录配置
+    date_directories = DIRECTORIES.copy()
+    date_directories["ERROR_HTML_DIR"] = f"outputs/twitter/error_html/{task_type}/{current_date}"
+    date_directories["LOGS_DIR"] = f"outputs/twitter/logs/{task_type}/{current_date}"
+    date_directories["RESULTS_DIR"] = f"outputs/twitter/results/{task_type}/{current_date}"
+    
+    return date_directories
 
 def get_file_config():
     """获取文件路径配置"""

@@ -7,7 +7,8 @@ from .twitter_common import (
     human_behavior, 
     setup_browser_and_login, 
     save_error_data,
-    ensure_directories
+    ensure_directories,
+    log_with_timestamp
 )
 from .config import get_behavior_config, get_file_config
 
@@ -28,16 +29,16 @@ def load_tweet_content_from_file(filename):
                             item['images'] = []
                         tweet_contents.append(item)
                     else:
-                        print(f"跳过无效的推文数据: {item}")
+                        log_with_timestamp(f"跳过无效的推文数据: {item}", "WARNING")
             else:
-                print(f"推文内容文件格式错误，应该是一个列表")
+                log_with_timestamp(f"推文内容文件格式错误，应该是一个列表", "ERROR")
                 return []
         
-        print(f"从JSON文件 {filename} 成功加载了 {len(tweet_contents)} 条推文内容")
+        log_with_timestamp(f"从JSON文件 {filename} 成功加载了 {len(tweet_contents)} 条推文内容", "SUCCESS")
         return tweet_contents
     
     except Exception as e:
-        print(f"加载推文内容文件时出错: {e}")
+        log_with_timestamp(f"加载推文内容文件时出错: {e}", "ERROR")
         return []
 
 def load_published_tweets(filename):
@@ -48,14 +49,14 @@ def load_published_tweets(filename):
         if os.path.exists(filename):
             with open(filename, 'r', encoding='utf-8') as f:
                 published_tweets = json.load(f)
-            print(f"📊 已加载 {len(published_tweets)} 条已发布推文记录")
+            log_with_timestamp(f"📊 已加载 {len(published_tweets)} 条已发布推文记录", "SUCCESS")
         else:
-            print(f"📝 未找到已发布记录文件，将创建新文件: {filename}")
+            log_with_timestamp(f"📝 未找到已发布记录文件，将创建新文件: {filename}", "INFO")
         
         return published_tweets
     
     except Exception as e:
-        print(f"⚠️ 加载已发布推文记录时出错: {e}")
+        log_with_timestamp(f"⚠️ 加载已发布推文记录时出错: {e}", "ERROR")
         return []
 
 def append_published_tweet(filename, tweet_data):
@@ -82,7 +83,7 @@ def append_published_tweet(filename, tweet_data):
         return True
     
     except Exception as e:
-        print(f"❌ 保存发布记录时出错: {e}")
+        log_with_timestamp(f"❌ 保存发布记录时出错: {e}", "ERROR")
         return False
 
 def is_tweet_already_published(tweet_data, published_tweets):
@@ -115,8 +116,9 @@ def filter_unpublished_tweets(tweet_contents, published_tweets):
         else:
             tweet_text = tweet.get('text', '')
             # print(f"⏭️ 跳过已发布的推文: {tweet_text[:50]}...")
+            # 跳过已发布推文时不再逐条打印，避免日志过多
     
-    print(f"📋 过滤结果: 总共 {len(tweet_contents)} 条，已发布 {len(tweet_contents) - len(unpublished)} 条，待发布 {len(unpublished)} 条")
+    log_with_timestamp(f"📋 过滤结果: 总共 {len(tweet_contents)} 条，已发布 {len(tweet_contents) - len(unpublished)} 条，待发布 {len(unpublished)} 条", "INFO")
     return unpublished
 
 def post_tweet(page, tweet_text, image_paths=None):
@@ -131,7 +133,7 @@ def post_tweet(page, tweet_text, image_paths=None):
     返回:
     - bool: 发布是否成功
     """
-    print(f"准备发布推文: {tweet_text[:50]}...")
+    log_with_timestamp(f"准备发布推文: {tweet_text[:50]}...", "INFO")
     
     try:
         # 访问Twitter主页
@@ -151,11 +153,11 @@ def post_tweet(page, tweet_text, image_paths=None):
             temp_box = page.locator(selector).first
             if temp_box and temp_box.is_visible():
                 tweet_box = temp_box
-                print(f"找到推文输入框: {selector}")
+                log_with_timestamp(f"找到推文输入框: {selector}", "SUCCESS")
                 break
         
         if not tweet_box:
-            print("找不到推文输入框")
+            log_with_timestamp("找不到推文输入框", "ERROR")
             save_error_data(page, "post_tweet", "no_tweet_box")
             return False
         
@@ -185,19 +187,19 @@ def post_tweet(page, tweet_text, image_paths=None):
         if image_paths and len(image_paths) > 0:
             # Twitter最多支持4张图片
             upload_images = image_paths[:4]
-            print(f"准备上传 {len(upload_images)} 张图片")
+            log_with_timestamp(f"准备上传 {len(upload_images)} 张图片", "INFO")
             
             # 验证图片文件是否存在
             valid_images = []
             for img_path in upload_images:
                 if os.path.exists(img_path):
                     valid_images.append(img_path)
-                    print(f"验证图片存在: {img_path}")
+                    log_with_timestamp(f"验证图片存在: {img_path}", "INFO")
                 else:
-                    print(f"图片文件不存在: {img_path}")
+                    log_with_timestamp(f"图片文件不存在: {img_path}", "WARNING")
             
             if not valid_images:
-                print("没有有效的图片文件，跳过上传")
+                log_with_timestamp("没有有效的图片文件，跳过上传", "INFO")
             else:
                 # 基于HTML分析，正确的图片上传按钮选择器
                 upload_button_selectors = [
@@ -214,7 +216,7 @@ def post_tweet(page, tweet_text, image_paths=None):
                         temp_button = page.locator(selector).first
                         if temp_button and temp_button.is_visible():
                             upload_button = temp_button
-                            print(f"找到上传按钮: {selector}")
+                            log_with_timestamp(f"找到上传按钮: {selector}", "SUCCESS")
                             break
                     except Exception:
                         continue
@@ -255,12 +257,12 @@ def post_tweet(page, tweet_text, image_paths=None):
                         }""")
                         
                         if found.get('found'):
-                            print(f"通过JavaScript找到上传按钮: {found.get('selector')}")
+                            log_with_timestamp(f"通过JavaScript找到上传按钮: {found.get('selector')}", "SUCCESS")
                         else:
-                            print("JavaScript也无法找到上传按钮，跳过图片上传")
+                            log_with_timestamp("JavaScript也无法找到上传按钮，跳过图片上传", "INFO")
                             valid_images = []
                     except Exception as e:
-                        print(f"JavaScript查找上传按钮失败: {str(e)}")
+                        log_with_timestamp(f"JavaScript查找上传按钮失败: {str(e)}", "ERROR")
                         valid_images = []
                 
                 # 如果找到了上传按钮且有有效图片，进行上传
@@ -270,11 +272,11 @@ def post_tweet(page, tweet_text, image_paths=None):
                         def handle_file_chooser(file_chooser):
                             """处理文件选择对话框"""
                             try:
-                                print(f"文件选择对话框已打开，准备上传 {len(valid_images)} 个文件")
+                                log_with_timestamp(f"文件选择对话框已打开，准备上传 {len(valid_images)} 个文件", "INFO")
                                 file_chooser.set_files(valid_images)
-                                print("文件已设置到选择器")
+                                log_with_timestamp("文件已设置到选择器", "SUCCESS")
                             except Exception as e:
-                                print(f"设置文件到选择器时出错: {str(e)}")
+                                log_with_timestamp(f"设置文件到选择器时出错: {str(e)}", "ERROR")
                         
                         # 监听文件选择器事件
                         page.on("filechooser", handle_file_chooser)
@@ -282,7 +284,7 @@ def post_tweet(page, tweet_text, image_paths=None):
                         # 点击上传按钮
                         if upload_button:
                             upload_button.click()
-                            print("成功点击上传按钮")
+                            log_with_timestamp("成功点击上传按钮", "SUCCESS")
                         else:
                             # 使用JavaScript点击
                             page.evaluate("""() => {
@@ -299,7 +301,7 @@ def post_tweet(page, tweet_text, image_paths=None):
                                     }
                                 }
                             }""")
-                            print("通过JavaScript点击上传按钮")
+                            log_with_timestamp("通过JavaScript点击上传按钮", "INFO")
                         
                         # 等待文件上传完成
                         human_behavior(page, 2, 4, True, False)
@@ -308,15 +310,15 @@ def post_tweet(page, tweet_text, image_paths=None):
                         try:
                             # 等待图片预览出现或上传完成的指示器
                             page.wait_for_selector("div[data-testid='toolBar'] img, div[aria-label*='Remove'], button[aria-label*='Remove']", timeout=15000)
-                            print("图片上传并处理完成")
+                            log_with_timestamp("图片上传并处理完成", "SUCCESS")
                         except Exception:
-                            print("等待图片处理完成超时，但继续发布")
+                            log_with_timestamp("等待图片处理完成超时，但继续发布", "WARNING")
                         
                         # 移除文件选择器监听器
                         page.remove_listener("filechooser", handle_file_chooser)
                         
                     except Exception as e:
-                        print(f"上传图片过程中出错: {str(e)}")
+                        log_with_timestamp(f"上传图片过程中出错: {str(e)}", "ERROR")
                         # 移除监听器
                         try:
                             page.remove_listener("filechooser", handle_file_chooser)
@@ -340,17 +342,17 @@ def post_tweet(page, tweet_text, image_paths=None):
                 # 检查按钮是否可点击（不是禁用状态）
                 if not temp_button.is_disabled():
                     tweet_button = temp_button
-                    print(f"找到发布按钮: {selector}")
+                    log_with_timestamp(f"找到发布按钮: {selector}", "SUCCESS")
                     break
         
         if not tweet_button:
-            print("找不到可用的发布按钮")
+            log_with_timestamp("找不到可用的发布按钮", "ERROR")
             save_error_data(page, "post_tweet", "no_tweet_button")
             return False
         
         # 点击发布按钮
         tweet_button.click()
-        print("已点击发布按钮")
+        log_with_timestamp("已点击发布按钮", "SUCCESS")
         
         # 等待推文发布完成
         human_behavior(page, 3, 5, True, False)
@@ -383,15 +385,15 @@ def post_tweet(page, tweet_text, image_paths=None):
             success = True
         
         if success:
-            print("推文发布成功!")
+            log_with_timestamp("推文发布成功!", "SUCCESS")
             return True
         else:
-            print("推文可能发布失败")
+            log_with_timestamp("推文可能发布失败", "ERROR")
             save_error_data(page, "post_tweet", "publish_failed")
             return False
             
     except Exception as e:
-        print(f"发布推文时出错: {str(e)}")
+        log_with_timestamp(f"发布推文时出错: {str(e)}", "ERROR")
         save_error_data(page, "post_tweet", f"exception_{str(e).replace(' ', '_')[:30]}")
         return False
 
@@ -414,7 +416,7 @@ def post_multiple_tweets(page, tweets_data, delay_range=None, success_file=None,
         behavior_config = get_behavior_config()
         delay_range = (behavior_config["TWEET_DELAY_MIN"], behavior_config["TWEET_DELAY_MAX"])
     
-    print(f"准备批量发布 {len(tweets_data)} 条推文")
+    log_with_timestamp(f"准备批量发布 {len(tweets_data)} 条推文", "INFO")
     
     results = {
         'success': 0,
@@ -426,7 +428,7 @@ def post_multiple_tweets(page, tweets_data, delay_range=None, success_file=None,
         tweet_text = tweet_data.get('text', '')
         image_paths = tweet_data.get('images', [])
         
-        print(f"发布第 {i+1}/{len(tweets_data)} 条推文...")
+        log_with_timestamp(f"发布第 {i+1}/{len(tweets_data)} 条推文...", "INFO")
         
         try:
             success = post_tweet(page, tweet_text, image_paths)
@@ -443,7 +445,7 @@ def post_multiple_tweets(page, tweets_data, delay_range=None, success_file=None,
             
             if success:
                 results['success'] += 1
-                print(f"第 {i+1} 条推文发布成功")
+                log_with_timestamp(f"第 {i+1} 条推文发布成功", "SUCCESS")
                 
                 # 实时保存成功发布的推文记录
                 if success_file:
@@ -455,7 +457,7 @@ def post_multiple_tweets(page, tweets_data, delay_range=None, success_file=None,
                     append_published_tweet(success_file, published_data)
             else:
                 results['failed'] += 1
-                print(f"第 {i+1} 条推文发布失败")
+                log_with_timestamp(f"第 {i+1} 条推文发布失败", "ERROR")
             
             # 实时保存发布结果
             if results_file:
@@ -465,11 +467,11 @@ def post_multiple_tweets(page, tweets_data, delay_range=None, success_file=None,
             # 如果不是最后一条推文，添加随机延迟
             if i < len(tweets_data) - 1:
                 delay_time = random.randint(delay_range[0], delay_range[1])
-                print(f"等待 {delay_time} 秒后发布下一条推文...")
+                log_with_timestamp(f"等待 {delay_time} 秒后发布下一条推文...", "INFO")
                 human_behavior(page, delay_time, delay_time + 10, True, True)
                 
         except Exception as e:
-            print(f"处理第 {i+1} 条推文时出错: {str(e)}")
+            log_with_timestamp(f"处理第 {i+1} 条推文时出错: {str(e)}", "ERROR")
             results['failed'] += 1
             results['details'].append({
                 'index': i + 1,
@@ -485,17 +487,17 @@ def post_multiple_tweets(page, tweets_data, delay_range=None, success_file=None,
                 with open(results_file, 'w', encoding='utf-8') as f:
                     json.dump(results, f, ensure_ascii=False, indent=2)
     
-    print(f"批量发布完成: 成功 {results['success']} 条, 失败 {results['failed']} 条")
+    log_with_timestamp(f"批量发布完成: 成功 {results['success']} 条, 失败 {results['failed']} 条", "INFO")
     
     # 最终保存发布结果到统一目录
     if results_file:
-        print(f"发布结果已实时保存到: {results_file}")
+        log_with_timestamp(f"发布结果已实时保存到: {results_file}", "INFO")
     
     return results
 
 def run_post_tweet_task(playwright: Playwright) -> None:
     """推文发布功能的主函数"""
-    print("=== Twitter 推文发布功能 ===")
+    log_with_timestamp("=== Twitter 推文发布功能 ===", "INFO")
     
     # 确保所有必要的目录存在
     ensure_directories()
@@ -507,13 +509,13 @@ def run_post_tweet_task(playwright: Playwright) -> None:
     
     # 检查必要文件是否存在
     if not os.path.exists(tweet_content_file):
-        print(f"❌ 推文内容文件不存在: {tweet_content_file}")
+        log_with_timestamp(f"❌ 推文内容文件不存在: {tweet_content_file}", "ERROR")
         return
     
     # 加载推文内容
     tweet_contents = load_tweet_content_from_file(tweet_content_file)
     if not tweet_contents:
-        print(f"❌ 推文内容列表为空或无法加载文件 {tweet_content_file}")
+        log_with_timestamp(f"❌ 推文内容列表为空或无法加载文件 {tweet_content_file}", "ERROR")
         return
     
     # 加载已发布的推文记录（断点恢复）
@@ -523,50 +525,53 @@ def run_post_tweet_task(playwright: Playwright) -> None:
     unpublished_tweets = filter_unpublished_tweets(tweet_contents, published_tweets)
     
     if not unpublished_tweets:
-        print("🎉 所有推文都已发布完成，无需继续发布！")
+        log_with_timestamp("🎉 所有推文都已发布完成，无需继续发布！", "INFO")
         return
 
     # === 新增：随机打乱推文顺序 ===
     random.shuffle(unpublished_tweets)
-    print("已随机打乱推文发布顺序")
+    log_with_timestamp("已随机打乱推文发布顺序", "INFO")
     
-    print(f"📝 本次将发布 {len(unpublished_tweets)} 条未发布的推文")
+    log_with_timestamp(f"📝 本次将发布 {len(unpublished_tweets)} 条未发布的推文", "INFO")
     
     # 设置浏览器并登录
     browser, context, page = setup_browser_and_login(playwright)
     if not all([browser, context, page]):
-        print("❌ 无法设置浏览器或登录，退出程序")
+        log_with_timestamp("❌ 无法设置浏览器或登录，退出程序", "ERROR")
         return
     
     try:
         # 登录成功后，开始批量发布推文
         human_behavior(page, 3, 6, True, True)
         
-        print(f"\n📤 开始批量发布 {len(unpublished_tweets)} 条推文...")
+        log_with_timestamp(f"\n📤 开始批量发布 {len(unpublished_tweets)} 条推文...", "INFO")
         behavior_config = get_behavior_config()
-        print(f"⏱️ 推文间隔设置为 {behavior_config['TWEET_DELAY_MIN']}-{behavior_config['TWEET_DELAY_MAX']} 秒")
-        print(f"💾 成功发布的推文将实时保存到: {tweet_progress_file}")
+        log_with_timestamp(f"⏱️ 推文间隔设置为 {behavior_config['TWEET_DELAY_MIN']}-{behavior_config['TWEET_DELAY_MAX']} 秒", "INFO")
+        log_with_timestamp(f"💾 成功发布的推文将实时保存到: {tweet_progress_file}", "INFO")
         
         # 准备实时保存的结果文件
-        from .config import get_directories
-        directories = get_directories()
-        results_dir = directories["RESULTS_DIR"]
+        from .config import get_directories_with_date
         
-        result_filename = os.path.join(results_dir, f"tweet_results_{time.strftime('%Y%m%d_%H%M%S')}.json")
-        print(f"📊 发布结果将实时保存到: {result_filename}")
+        # 判断当前任务类型
+        task_type = "post"
+        date_directories = get_directories_with_date(task_type)
+        results_dir = date_directories["RESULTS_DIR"]
+        
+        result_filename = os.path.join(results_dir, f"tweet_results_{time.strftime('%H%M%S')}.json")
+        log_with_timestamp(f"📊 发布结果将实时保存到: {result_filename}", "INFO")
         
         # 使用配置文件中的延迟设置，并传入成功记录文件路径和结果文件路径
         results = post_multiple_tweets(page, unpublished_tweets, success_file=tweet_progress_file, results_file=result_filename)
         
-        print(f"\n📊 批量发布结果：")
-        print(f"✅ 成功: {results['success']} 条")
-        print(f"❌ 失败: {results['failed']} 条")
+        log_with_timestamp(f"\n📊 批量发布结果：", "INFO")
+        log_with_timestamp(f"✅ 成功: {results['success']} 条", "SUCCESS")
+        log_with_timestamp(f"❌ 失败: {results['failed']} 条", "ERROR")
         
-        print(f"\n🎉 推文发布任务完成！")
+        log_with_timestamp(f"\n🎉 推文发布任务完成！", "INFO")
         
     except Exception as e:
-        print(f"❌ 推文发布过程中出现错误: {str(e)}")
-        print(f"💡 提示: 已成功发布的推文已保存，发布结果已实时保存，可以重新运行程序继续发布")
+        log_with_timestamp(f"❌ 推文发布过程中出现错误: {str(e)}", "ERROR")
+        log_with_timestamp(f"💡 提示: 已成功发布的推文已保存，发布结果已实时保存，可以重新运行程序继续发布", "INFO")
     finally:
         # 清理资源
         context.close()

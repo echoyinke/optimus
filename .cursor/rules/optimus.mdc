@@ -1,0 +1,65 @@
+---
+alwaysApply: true
+---
+
+
+
+📁 目录结构通用要求
+	1.	所有输出内容必须放置于根目录下的 outputs/ 文件夹中，禁止写入项目根目录或相对路径其他位置。
+	•	❌ 错误示例："./log.txt"、"./result.csv"
+	•	✅ 正确示例："outputs/logs/..."、"outputs/results/..."
+	2.	输出路径必须使用绝对路径，禁止使用相对路径（如 "./"、"../"）。
+	3.	每个模块应在 outputs/ 下创建自己的子目录，命名规则为：outputs/{模块名}/。
+	4.	当输出结果与运行日期相关时，必须以 YYYY-MM-DD 的形式嵌入路径中。
+	•	✅ 示例：outputs/infer/2025-07-24/output.json
+	•	✅ 示例：outputs/logs/train/2025-07-24/run.log
+
+⸻
+
+📝 日志输出规范（统一管理）
+	5.	所有日志必须输出到 outputs/logs/{模块名}/{日期}/ 目录下，文件名建议为 run.log 或带时间戳。
+	•	示例：outputs/logs/data_pipeline/2025-07-24/run.log
+	6.	日志应使用 logging 模块输出，不能使用 print()。必须封装统一日志初始化函数。
+	7.	日志路径必须自动创建，不能依赖目录已存在。
+	8.	每次运行应创建新的日志文件（带日期/时间戳），避免文件被覆盖。
+	9.	日志文件编码必须为 UTF-8。
+
+⸻
+
+📄 产出结果规范（如 CSV、JSON、图表、模型等）
+	10.	所有产出文件（结果、图表、模型文件等）必须放入：outputs/{模块名}/{日期}/ 目录中。
+	11.	每类产出应放在独立子目录中：如 results/、images/、models/，不可混杂。
+
+	•	示例：
+	•	outputs/eval/2025-07-24/results/preds.json
+	•	outputs/eval/2025-07-24/images/chart.png
+
+	12.	文件命名必须表达清晰意图，不允许使用 tmp.json、1.csv、xxx.log 等无意义名字。
+
+⸻
+
+🔧 其他执行约束
+	13.	路径拼接必须使用 os.path.join() 或 pathlib.Path()，严禁字符串拼接。
+	14.	所有输出相关路径应在程序开始时统一初始化和打印，方便调试与日志跟踪。
+	15.	临时文件（如 cache）也必须放入 outputs/cache/{模块名}/ 目录下，便于清理。
+
+⸻
+
+📌 示例目录结构（自动生成）：
+
+outputs/
+├── logs/
+│   └── inference/
+│       └── 2025-07-24/
+│           └── run.log
+├── inference/
+│   └── 2025-07-24/
+│       ├── results/
+│       │   └── preds.json
+│       └── images/
+│           └── confusion_matrix.png
+├── cache/
+│   └── infer/
+│       └── tokenizer.cache
+
+
