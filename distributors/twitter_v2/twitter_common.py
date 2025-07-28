@@ -265,6 +265,23 @@ def load_cookies(context, username=None, filename=None):
         log_with_timestamp(f"加载 Cookies 时出错: {e}", "ERROR")
         return False
 
+def delete_current_cookies():
+    """删除当前账号的cookie文件"""
+    try:
+        # 使用当前配置的用户名
+        filename = get_cookies_file_path(USERNAME)
+        
+        if os.path.exists(filename):
+            os.remove(filename)
+            log_with_timestamp(f"已删除当前账号({USERNAME})的 Cookies 文件: {filename}", "SUCCESS")
+            return True
+        else:
+            log_with_timestamp(f"当前账号({USERNAME})的 Cookie 文件不存在: {filename}", "WARNING")
+            return False
+    except Exception as e:
+        log_with_timestamp(f"删除当前账号({USERNAME})的 Cookies 时出错: {e}", "ERROR")
+        return False
+
 def login_with_credentials(page):
     """使用账号密码登录"""
     page.goto("https://x.com/i/flow/login")
@@ -374,15 +391,22 @@ def setup_browser_and_login(playwright: Playwright):
         
         if cookies_loaded:
             # 如果加载了 cookies，尝试访问 Twitter 主页
-            page.goto("https://twitter.com/home")
-            human_behavior(page)
-            
-            # 检查是否需要重新登录
-            if page.url.startswith("https://twitter.com/i/flow/login"):
-                log_with_timestamp("Cookies 已过期，需要重新登录", "WARNING")
-                login_with_credentials(page)
-            else:
-                log_with_timestamp("使用 Cookies 成功登录", "SUCCESS")
+            try:
+                page.goto("https://twitter.com/home", timeout=30000)  # 30秒超时
+                human_behavior(page)
+                
+                # 检查是否需要重新登录
+                if page.url.startswith("https://twitter.com/i/flow/login"):
+                    log_with_timestamp("Cookies 已过期，正在删除失效cookie并重新登录", "WARNING")
+                    login_with_credentials(page)
+                else:
+                    log_with_timestamp("使用 Cookies 成功登录", "SUCCESS")
+                    
+            except Exception as e:
+                # 访问主页时出现异常（包括超时），删除cookie并抛出异常
+                log_with_timestamp(f"使用Cookies访问主页时出现异常: {str(e)}，正在删除cookie", "ERROR")
+                delete_current_cookies()
+                raise e  # 重新抛出异常，让上层处理
         else:
             # 如果没有 cookies，使用账号密码登录
             login_with_credentials(page)
